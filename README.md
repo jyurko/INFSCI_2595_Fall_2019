@@ -1,6 +1,6 @@
 # INFSCI_2595_Fall_2019
-Welcome to INFSCI 2595 - Machine Learning!  
-This course primarily provides an overview of popular supervised learning methods, ranging from the fundamental linear model up to ensemble methods.  
+## Welcome to INFSCI 2595 - Machine Learning!  
+This course provides an overview of popular supervised learning methods, ranging from the fundamental linear model up to ensemble methods.  
 In addition, students will be introduced to feature selection, unsupervised learning, and reinforcement learning topics and methods.
 
 ### Week 01
