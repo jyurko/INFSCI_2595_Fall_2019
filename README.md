@@ -19,7 +19,7 @@ In addition, students will be introduced to feature selection, unsupervised lear
 ### Week 04
 * Introduction to linear models.
 * OLS, MLE, and MAP.
-* Approximate posterior with the Laplace approximation.
+* Laplace approximation, posterior covariance matrix.
 * Posterior predictions and uncertainty intervals.
 * Linear basis functions and design matrices.
 
