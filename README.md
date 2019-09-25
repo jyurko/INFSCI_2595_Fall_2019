@@ -17,6 +17,15 @@ In addition, students will be introduced to feature selection, unsupervised lear
 * Laplace approximation.  
 
 ### Week 04
-* Linear models.
+* Introduction to linear models.
+* OLS, MLE, and MAP.
+* Approximate posterior with the Laplace approximation.
+* Posterior predictions and uncertainty intervals.
+* Linear basis functions and design matrices.
+
+### Week 05
+* Regression performance metrics: RMSE, MAE, R-squared.
+* Bayesian model selection, complexity, and information criteria.
+* Introduction to logistic regression.
 
 ![PittSCIlogo](https://pbs.twimg.com/profile_images/881872023546408960/coamC-xz_400x400.jpg)
