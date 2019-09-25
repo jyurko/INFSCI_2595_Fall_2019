@@ -1,7 +1,7 @@
-INFSCI 2595: Lecture 08
+INFSCI 2595: Lecture 08/09
 ================
 Dr. Joseph P. Yurko
-September 18, 2019
+September 18/25, 2019
 
 Load packages
 -------------
@@ -278,7 +278,7 @@ We will therefore move onto a more challenging question. What if we did not know
 
 Ultimately, in order to compare models we need to assess *performance*. We must consider accuracy, how well does the model "fit" the data? However, there is more to performance that simply reproducing the exact response values within the training set. We need to consider if the model will *generalize*, and understand if a model is too *complex*.
 
-We will introduce these concepts with our simple quadratic example. We will compare an intercept only model up to and including a fifth order polynomial. We will therefore build and compare *6* different models!
+We will introduce these concepts with our simple quadratic example. We will compare an intercept only model up to and including an eighth order polynomial. We will therefore build and compare *9* different models!
 
 ### Predictor design matrix
 
@@ -378,7 +378,7 @@ head(model.matrix(y ~ poly(x,2, raw = TRUE), train_df))
     ## 5           1              -0.1097598              0.01204722
     ## 6           1              -0.8432582              0.71108438
 
-Let's now create the design matrices for the other 5 model forms we will use.
+Let's now create the design matrices for the other 8 model forms we will use.
 
 ``` r
 design_int <- model.matrix(y ~ 1, train_df)
@@ -390,21 +390,63 @@ design_cube <- model.matrix(y ~ x + I(x^2) + I(x^3), train_df)
 design_4 <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4), train_df)
 
 design_5 <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5), train_df)
+
+design_6 <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + I(x^6), train_df)
+
+design_7 <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + I(x^6) + I(x^7), train_df)
+
+design_8 <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + I(x^6) + I(x^7) + I(x^8), train_df)
 ```
+
+As a check, the first 6 rows of the intercept only and the 4th order design matrices are printed below.
+
+``` r
+### intercept only
+design_int %>% head()
+```
+
+    ##   (Intercept)
+    ## 1           1
+    ## 2           1
+    ## 3           1
+    ## 4           1
+    ## 5           1
+    ## 6           1
+
+``` r
+### 4th order design
+design_4 %>% head()
+```
+
+    ##   (Intercept)          x     I(x^2)       I(x^3)       I(x^4)
+    ## 1           1  1.1868905 1.40870907  1.671983427 1.9844612560
+    ## 2           1  0.7488747 0.56081331  0.419978894 0.3145115660
+    ## 3           1  0.4815022 0.23184440  0.111633598 0.0537518272
+    ## 4           1 -0.6358824 0.40434647 -0.257116818 0.1634960678
+    ## 5           1 -0.1097598 0.01204722 -0.001322301 0.0001451355
+    ## 6           1 -0.8432582 0.71108438 -0.599627726 0.5056409921
 
 ### Probability model
 
-Let's write out a generic probability model that we will work with. We will use independent zero mean gaussian priors on all linear predictor parameters, ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}"), with prior standard deviations equal to ![2.5](https://latex.codecogs.com/png.latex?2.5 "2.5"). We will use a uniform prior on ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") with lower bound equal to 0 and upper bound equal to 10. Since all of the linear predictor coefficients use the same standard deviation, we can write out our generic probability model as:
+Let's write out a generic probability model that we will work with. We will use independent zero mean gaussian priors on all linear predictor parameters, ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}"), with prior standard deviations equal to ![2.5](https://latex.codecogs.com/png.latex?2.5 "2.5"). An exponential prior is applied to ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") with a "rate" parameter equal to 1. Since all of the linear predictor coefficients use the same standard deviation, we can write out our generic probability model as:
 
 ![ 
-y\_{n} \\mid \\mu\_{n}, \\sigma \\sim \\mathrm{normal}\\left(y\_n \\mid \\mu\_n, \\sigma \\right) \\\\ \\mu\_{n} = \\mathbf{x}\_{n,:} \\boldsymbol{\\beta} \\\\ \\boldsymbol{\\beta} \\sim \\mathcal{N}\\left(\\boldsymbol{\\beta} \\mid \\mathbf{0}, 2.5 \\cdot \\mathbf{I}\_{J+1} \\right) \\\\ \\sigma \\sim \\mathrm{uniform} \\left(\\sigma \\mid 0, 10 \\right)
-](https://latex.codecogs.com/png.latex?%20%0Ay_%7Bn%7D%20%5Cmid%20%5Cmu_%7Bn%7D%2C%20%5Csigma%20%5Csim%20%5Cmathrm%7Bnormal%7D%5Cleft%28y_n%20%5Cmid%20%5Cmu_n%2C%20%5Csigma%20%5Cright%29%20%5C%5C%20%5Cmu_%7Bn%7D%20%3D%20%5Cmathbf%7Bx%7D_%7Bn%2C%3A%7D%20%5Cboldsymbol%7B%5Cbeta%7D%20%5C%5C%20%5Cboldsymbol%7B%5Cbeta%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cboldsymbol%7B%5Cbeta%7D%20%5Cmid%20%5Cmathbf%7B0%7D%2C%202.5%20%5Ccdot%20%5Cmathbf%7BI%7D_%7BJ%2B1%7D%20%5Cright%29%20%5C%5C%20%5Csigma%20%5Csim%20%5Cmathrm%7Buniform%7D%20%5Cleft%28%5Csigma%20%5Cmid%200%2C%2010%20%5Cright%29%0A " 
-y_{n} \mid \mu_{n}, \sigma \sim \mathrm{normal}\left(y_n \mid \mu_n, \sigma \right) \\ \mu_{n} = \mathbf{x}_{n,:} \boldsymbol{\beta} \\ \boldsymbol{\beta} \sim \mathcal{N}\left(\boldsymbol{\beta} \mid \mathbf{0}, 2.5 \cdot \mathbf{I}_{J+1} \right) \\ \sigma \sim \mathrm{uniform} \left(\sigma \mid 0, 10 \right)
+y\_{n} \\mid \\mu\_{n}, \\sigma \\sim \\mathrm{normal}\\left(y\_n \\mid \\mu\_n, \\sigma \\right) \\\\ \\mu\_{n} = \\mathbf{x}\_{n,:} \\boldsymbol{\\beta} \\\\ \\boldsymbol{\\beta} \\sim \\mathcal{N}\\left(\\boldsymbol{\\beta} \\mid \\mathbf{0}, \\left(2.5\\right)^2 \\cdot \\mathbf{I}\_{J+1} \\right) \\\\ \\sigma \\sim \\mathrm{Exp} \\left(\\sigma \\mid 1 \\right)
+](https://latex.codecogs.com/png.latex?%20%0Ay_%7Bn%7D%20%5Cmid%20%5Cmu_%7Bn%7D%2C%20%5Csigma%20%5Csim%20%5Cmathrm%7Bnormal%7D%5Cleft%28y_n%20%5Cmid%20%5Cmu_n%2C%20%5Csigma%20%5Cright%29%20%5C%5C%20%5Cmu_%7Bn%7D%20%3D%20%5Cmathbf%7Bx%7D_%7Bn%2C%3A%7D%20%5Cboldsymbol%7B%5Cbeta%7D%20%5C%5C%20%5Cboldsymbol%7B%5Cbeta%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cboldsymbol%7B%5Cbeta%7D%20%5Cmid%20%5Cmathbf%7B0%7D%2C%20%5Cleft%282.5%5Cright%29%5E2%20%5Ccdot%20%5Cmathbf%7BI%7D_%7BJ%2B1%7D%20%5Cright%29%20%5C%5C%20%5Csigma%20%5Csim%20%5Cmathrm%7BExp%7D%20%5Cleft%28%5Csigma%20%5Cmid%201%20%5Cright%29%0A " 
+y_{n} \mid \mu_{n}, \sigma \sim \mathrm{normal}\left(y_n \mid \mu_n, \sigma \right) \\ \mu_{n} = \mathbf{x}_{n,:} \boldsymbol{\beta} \\ \boldsymbol{\beta} \sim \mathcal{N}\left(\boldsymbol{\beta} \mid \mathbf{0}, \left(2.5\right)^2 \cdot \mathbf{I}_{J+1} \right) \\ \sigma \sim \mathrm{Exp} \left(\sigma \mid 1 \right)
 ")
 
 The prior on the linear predictor coefficients is written as a MVN distribution. The term ![\\mathbf{I}\_{J+1}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BI%7D_%7BJ%2B1%7D "\mathbf{I}_{J+1}") denotes the identity matrix with ![J+1](https://latex.codecogs.com/png.latex?J%2B1 "J+1") rows and columns. Since the identity matrix consists of 1's along the main diagonal and zeros everywhere else, the MVN distribution defined above states all parameters are independent with prior standard deviation equal to ![2.5](https://latex.codecogs.com/png.latex?2.5 "2.5").
 
-The probability model is written in terms of ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma"), but as we did last lecture we will work with a log-transformed unbounded parameter instead. To limit confusion with the basis function notation from earlier in this document, we will denote the unbounded parameter as:
+Altneratively, we could have written the prior on the linear predictor parameters as the product of ![J+1](https://latex.codecogs.com/png.latex?J%2B1 "J+1") normal distributions. **Do you know why?**
+
+![ 
+\\boldsymbol{\\beta} \\sim \\prod\_{j=0}^{J+1} \\left( \\mathrm{normal} \\left( \\beta\_j \\mid 0, 2.5 \\right) \\right)
+](https://latex.codecogs.com/png.latex?%20%0A%5Cboldsymbol%7B%5Cbeta%7D%20%5Csim%20%5Cprod_%7Bj%3D0%7D%5E%7BJ%2B1%7D%20%5Cleft%28%20%5Cmathrm%7Bnormal%7D%20%5Cleft%28%20%5Cbeta_j%20%5Cmid%200%2C%202.5%20%5Cright%29%20%5Cright%29%0A " 
+\boldsymbol{\beta} \sim \prod_{j=0}^{J+1} \left( \mathrm{normal} \left( \beta_j \mid 0, 2.5 \right) \right)
+")
+
+The exponential prior distribution is written as ![\\mathrm{Exp}\\left( \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BExp%7D%5Cleft%28%20%5Cright%29 "\mathrm{Exp}\left( \right)"). It has support only over positive values and so it respects the lower bound of 0 on ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma"). The exponential distribution does not have an upper bound. The mean of an exponential is equal to the inverse of the "rate" parameter, and so our prior mean on the standard deviation is 1. Even though the exponential distribution respects the natural constraints on ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") we still need to apply a transformation, such as the log-transformation, in order to use the Laplace approximation. **Do you know why?**. To avoid confusion with the basis function notation from earlier in this report, the unbounded parameter will be denoted as ![\\varphi](https://latex.codecogs.com/png.latex?%5Cvarphi "\varphi"), which is called "varphi" in LaTeX. The log-transformed unbounded parameter is therefore defined as:
 
 ![ 
 \\varphi = \\log\\left\[\\sigma\\right\]
@@ -414,9 +456,9 @@ The probability model is written in terms of ![\\sigma](https://latex.codecogs.c
 
 ### Log-posterior function
 
-Let's now create our general log-posterior function. There are two input arguments, `theta` and `my_info`. All unknown parameters are stored in the `theta` vector, and the last element corresponds to the unbounded standard deviation ![\\varphi](https://latex.codecogs.com/png.latex?%5Cvarphi "\varphi"). The `my_info` list stores all other information necessary to evaluate the log-posterior, just as we used previously. In addition to storing the observations and hyperparameter information, `my_info` also stores the number of linear predictor parameters.
+Let's now create our general log-posterior function. There are two input arguments, `theta` and `my_info`. All unknown parameters are stored in the `theta` vector. Even though we are working with the unbounded transformed ![\\varphi](https://latex.codecogs.com/png.latex?%5Cvarphi "\varphi") variable, I am using denoting the argument to the log-posterior function as `theta` to avoid confusion with the ![\\varphi](https://latex.codecogs.com/png.latex?%5Cvarphi "\varphi") variable itself. The first ![J+1](https://latex.codecogs.com/png.latex?J%2B1 "J+1") elements of `theta` correspond to the linear predictor parameters ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}"). The last element corresponds to the unbounded standard deviation ![\\varphi](https://latex.codecogs.com/png.latex?%5Cvarphi "\varphi"). The `my_info` list stores all other information necessary to evaluate the log-posterior, just as we used previously. In addition to storing the observations and hyperparameter information, `my_info` also stores the number of linear predictor parameters with the variable `length_beta`.
 
-The log-posterior function is coded below. Note that the `sum()` function is now wrapped around the log-prior density evaluation of the ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}") parameters. **Do you understand each line of code below?**
+The log-posterior function is coded below. Note that the `sum()` function is now wrapped around the log-prior density evaluation of the ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}") parameters. Also note that the `dexp()` function is used for the log-prior density of ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") with hyperparameter defined as `sigma_rate`. **Do you understand each line of code below?**
 
 ``` r
 lm_logpost <- function(theta, my_info)
@@ -428,9 +470,10 @@ lm_logpost <- function(theta, my_info)
   lik_phi <- theta[my_info$length_beta + 1]
   lik_sigma <- exp(lik_phi)
   
-  # calculate linear predictor
+  # extract design matrix
   X <- my_info$design_matrix
   
+  # calculate the linear predictor
   mu <- as.vector(X %*% as.matrix(beta_v))
   
   # evaluate the log-likelihood
@@ -445,10 +488,9 @@ lm_logpost <- function(theta, my_info)
                               sd = my_info$tau_beta,
                               log = TRUE)) 
   
-  log_prior_sigma <- dunif(x = lik_sigma,
-                           min = my_info$sigma_lwr,
-                           max = my_info$sigma_upr,
-                           log = TRUE)
+  log_prior_sigma <- dexp(x = lik_sigma,
+                          rate = my_info$sigma_rate,
+                          log = TRUE)
   
   log_prior <- log_prior_beta + log_prior_sigma
   
@@ -488,7 +530,7 @@ my_laplace <- function(start_guess, logpost_func, ...)
 }
 ```
 
-Let's create a second wrapper function to allow us to loop over the polynomial order. This wrapper function will manage assembling the design matrix with the rest of the required information. It will also specify a random initial guess for the optimizer.
+Let's create a second wrapper function to allow us to loop over the polynomial order. This wrapper function will manage assembling the design matrix with the rest of the required information. Because we have already created the design matrices, the first argument to `manage_poly_order()` is a design matrix. The function randomly selects an initial guess based on the number of columns in the design matrix. **Given what you know about the posterior for a linear model, should we be concerned about a random guess preventing the optimizer from finding the posterior mode?**
 
 ``` r
 manage_poly_order <- function(design_use, logpost_func, my_settings)
@@ -502,7 +544,7 @@ manage_poly_order <- function(design_use, logpost_func, my_settings)
   # generate random initial guess
   init_beta <- rnorm(my_settings$length_beta, 0, 1)
   
-  init_phi <- log(runif(1, min = 0, max = 2.5))
+  init_phi <- log(rexp(n = 1, rate = my_settings$sigma_rate))
   
   # execute laplace approximation
   my_laplace(c(init_beta, init_phi), logpost_func, my_settings)
@@ -511,52 +553,52 @@ manage_poly_order <- function(design_use, logpost_func, my_settings)
 
 ### Laplace approximation
 
-The code chunk below creates our list of required information.
+The code chunk below creates our list of required information. The syntax is consistent with the previous lectures, except now the hyperparameter for the ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") prior distribution is set as the "rate" parameter of the exponential distribution.
 
 ``` r
 info_use <- list(
   yobs = train_df$y,
   mu_beta = 0,
   tau_beta = 2.5,
-  sigma_lwr = 0,
-  sigma_upr = 10
+  sigma_rate = 1
 )
 ```
 
-We can now loop over all of the candidate models. The `purrr::map()` function is used to execute the looping operation. Each Laplace approximation result is stored as an element in a list.
+We can now loop over all of the candidate models. The `purrr::map()` function is used to execute the looping operation. Each Laplace approximation result is stored as an element in a list. Notice that the variable to iterate over is defined in-line as a list. Each element of that list corresponds to one of the 9 design matrices we created previously.
 
 ``` r
 set.seed(8003)
 laplace_results <- purrr::map(list(design_int, design_lin, design_quad,
-                                   design_cube, design_4, design_5),
+                                   design_cube, design_4, design_5,
+                                   design_6, design_7, design_8),
                               manage_poly_order,
                               logpost_func = lm_logpost,
                               my_settings = info_use)
 ```
 
-The `laplace_results` object is a list of 6 elements. Each element is itself a list containing the fields associated with the `my_laplace()` results. For example, the intercept-only model as the result:
+The `laplace_results` object is a list of 9 elements. Each element is itself a list containing the fields associated with the `my_laplace()` results. For example, the intercept-only model as the result:
 
 ``` r
 laplace_results[[1]]
 ```
 
     ## $mode
-    ## [1] -1.558553  1.012874
+    ## [1] -1.5636212  0.9693285
     ## 
     ## $var_matrix
     ##             [,1]        [,2]
-    ## [1,] 0.243157292 0.002090926
-    ## [2,] 0.002090926 0.017259359
+    ## [1,] 0.223557928 0.001697229
+    ## [2,] 0.001697229 0.015185396
     ## 
     ## $log_evidence
-    ## [1] -76.673
+    ## [1] -77.16908
     ## 
     ## $converge
     ## [1] "YES"
     ## 
     ## $iter_counts
     ## function 
-    ##       38
+    ##       26
 
 The linear relationship model has the following result:
 
@@ -565,23 +607,23 @@ laplace_results[[2]]
 ```
 
     ## $mode
-    ## [1] -1.5585224 -0.3251661  1.0057815
+    ## [1] -1.5637871 -0.3261722  0.9625979
     ## 
     ## $var_matrix
     ##               [,1]          [,2]         [,3]
-    ## [1,]  0.2398633796 -0.0004281571 0.0020717440
-    ## [2,] -0.0004281571  0.2691685155 0.0004743273
-    ## [3,]  0.0020717440  0.0004743273 0.0172572054
+    ## [1,]  0.2206725786 -0.0004049856 0.0016759693
+    ## [2,] -0.0004049856  0.2477777262 0.0003898351
+    ## [3,]  0.0016759693  0.0003898351 0.0151981262
     ## 
     ## $log_evidence
-    ## [1] -78.05762
+    ## [1] -78.57587
     ## 
     ## $converge
     ## [1] "YES"
     ## 
     ## $iter_counts
     ## function 
-    ##       16
+    ##       54
 
 The quadratic relationship model:
 
@@ -590,24 +632,24 @@ laplace_results[[3]]
 ```
 
     ## $mode
-    ## [1]  0.3880257  1.1654817 -2.2714416 -0.7975118
+    ## [1]  0.3880648  1.1655207 -2.2714790 -0.8051664
     ## 
     ## $var_matrix
     ##               [,1]          [,2]          [,3]          [,4]
-    ## [1,]  1.063695e-02  0.0028949331 -4.391554e-03 -9.627767e-05
-    ## [2,]  2.894933e-03  0.0098064892 -3.292075e-03 -1.102664e-04
-    ## [3,] -4.391554e-03 -0.0032920746  4.969572e-03  9.277129e-05
-    ## [4,] -9.627767e-05 -0.0001102664  9.277129e-05  1.724334e-02
+    ## [1,]  1.047567e-02  0.0028511073 -0.0043250037 -9.279224e-05
+    ## [2,]  2.851107e-03  0.0096577562 -0.0032421865 -1.064626e-04
+    ## [3,] -4.325004e-03 -0.0032421865  0.0048941852  8.941620e-05
+    ## [4,] -9.279224e-05 -0.0001064626  0.0000894162  1.685341e-02
     ## 
     ## $log_evidence
-    ## [1] -33.22558
+    ## [1] -31.40609
     ## 
     ## $converge
     ## [1] "YES"
     ## 
     ## $iter_counts
     ## function 
-    ##       55
+    ##       44
 
 We can extract the `converge` field to quickly see if all model builds completed successfully. As show below, all laplace approximations did complete succesfully.
 
@@ -615,7 +657,7 @@ We can extract the `converge` field to quickly see if all model builds completed
 purrr::map_chr(laplace_results, "converge")
 ```
 
-    ## [1] "YES" "YES" "YES" "YES" "YES" "YES"
+    ## [1] "YES" "YES" "YES" "YES" "YES" "YES" "YES" "YES" "YES"
 
 ### Posterior predictions
 
@@ -700,7 +742,8 @@ Finally, make 10000 posterior predictions from each model.
 set.seed(8005)
 post_pred_train_all <- purrr::map2_dfr(laplace_results,
                                        list(design_int, design_lin, design_quad,
-                                            design_cube, design_4, design_5),
+                                            design_cube, design_4, design_5,
+                                            design_6, design_7, design_8),
                                        predict_from_laplace,
                                        num_post_samples = 1e4)
 ```
@@ -741,6 +784,39 @@ post_pred_train_all %>%
 
 ![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_index-1.png)
 
+Focus on the linear, quadratic, and 7th-order relationship models. The linear relationship model, ![J=1](https://latex.codecogs.com/png.latex?J%3D1 "J=1"), completely misses a few of the training points. **Can you see which ones? Can you guess which input values those data points correspond to?**
+
+``` r
+post_pred_train_all %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(1, 2, 7)) %>% 
+  ggplot(mapping = aes(x = pred_id)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_point(mapping = aes(y = y_obs),
+             color = "red") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "y") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_index_zoom-1.png)
+
 Next, visualize the prediction summaries with respect to the input.
 
 ``` r
@@ -773,7 +849,73 @@ post_pred_train_all %>%
 
 ![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_x-1.png)
 
-Let's visualize the **prediction-vs-observed** figure:
+Focus on two specific models, the linear relationship and the quadratic relationship. The posterior prediction portion which accounts for the noise term, ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma"), and thus the alleatory source of uncertainty is substantially higher in the linear relationship than the quadratic relationship. **Why do you think that is?**
+
+``` r
+post_pred_train_all %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(1, 2)) %>% 
+  ggplot(mapping = aes(x = x)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_point(mapping = aes(y = y_obs),
+             color = "red") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "y") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_x_zoom-1.png)
+
+Next, compare the quadratic relationship with the 7-th order relationship. **Can you spot any qualitative differences between the two?**
+
+``` r
+post_pred_train_all %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(2, 7)) %>% 
+  ggplot(mapping = aes(x = x)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_point(mapping = aes(y = y_obs),
+             color = "red") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "y") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_x_zoom_b-1.png)
+
+Let's now focus entirely on the relationship between the predictions and the observed values. We are therefore assessing the *correlation* between the predictions to the training responses. This type of figure is called a **predicted-vs-observated** figure. The figure usually includes a "45-degree" line along the diagonal. The points on the figure will fall along this diagonal line only if the predictions perfectly match the observed values. The predicted-vs-observed plot for all 9 models are shown below. The x-axis corresponds to the *noisy* observation. Thus, to get a sense of the impact of the noise, the *true* noise-free signal is also shown as a black square. Notice how the black squares tightly follow the 45-degree line. The fact that the black squares do not line up directly on the diagonal line is due to the noise. It is important to note that in a non-synthetic data problem, we will not know the *true* noise-free signal.
 
 ``` r
 post_pred_train_all %>% 
@@ -794,6 +936,8 @@ post_pred_train_all %>%
   geom_point(mapping = aes(y = mu_avg),
              shape = 21, size = 2.25, color = "steelblue",
              fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   facet_wrap(~J, labeller = "label_both") +
   labs(y = "Predicted response",
@@ -803,9 +947,88 @@ post_pred_train_all %>%
 
 ![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_observed_fig-1.png)
 
+As with the previous set of figures, let's focus on the linear, quadratic, and 7th order relationships.
+
+``` r
+post_pred_train_all %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(1, 2, 7)) %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_observed_fig_zoom-1.png)
+
 #### Performance metrics
 
-Now that we have looked at the predictions relative to the observations in the training set, let's summarize the posterior predictive performance. To do so, we will summarize the posterior distribution on the residuals or errors. We define a new function below, which is setup similar to `post_pred_summarize()`. The difference however is that the additional argument `y_ref` is the vector of (noisy) responses we are comparing to. The errors are calculated two ways, first relative to the linear predictor, and second relative to the random observation prediction.
+In our visual comparisons, we were assessing model accuracy by how "close" the predictions were to the observations. We were trying to see if the predictions were *correlated* with the observations. Accuracy and correlation can be quantified, and we actually already know how to do so. Accuracy is easily represented by the errors or residuals. As discussed in lecutre 07, minimizing the mean squared error is equivalent to maximizing the the log-likelihood of the linear model. Thus, a useful summary metric for comparing models is the root mean squared error (RMSE). In addition to the RMSE, the mean absolute error (MAE) is another common summary metric for the residuals. The MAE is less sensitive to outliers because the error term is not squared.
+
+In non-Bayesian models, the RMSE and MAE are estimated using the MLEs on the linear predictor parameters. The model fitting exercise therefore produces a single estimate for each performance metric. A Bayesian framework on the other hand, is capable of estimating the posterior *distribution* on the RMSE and MAE. Essentially, the RMSE and MAE associated with each posterior sample on ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}") is calculated. The distribution can be summarized to represent the most likely value and uncertainty around the most likely value. If there are ![s=1,...,S](https://latex.codecogs.com/png.latex?s%3D1%2C...%2CS "s=1,...,S") posterior samples, the ![s](https://latex.codecogs.com/png.latex?s "s")-th posterior sample on the MSE is calculated as:
+
+![ 
+\\mathrm{MSE}\_s = \\frac{1}{N} \\sum\_{n=1}^{N} \\left( \\left(y\_n - \\mu\_{n,s} \\right)^2 \\right) = \\frac{1}{N} \\sum\_{n=1}^{N} \\left( \\left(y\_n - \\mathbf{x}\_{n,:} \\boldsymbol{\\beta}\_s \\right)^2 \\right)
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7BMSE%7D_s%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bn%3D1%7D%5E%7BN%7D%20%5Cleft%28%20%5Cleft%28y_n%20-%20%5Cmu_%7Bn%2Cs%7D%20%5Cright%29%5E2%20%5Cright%29%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bn%3D1%7D%5E%7BN%7D%20%5Cleft%28%20%5Cleft%28y_n%20-%20%5Cmathbf%7Bx%7D_%7Bn%2C%3A%7D%20%5Cboldsymbol%7B%5Cbeta%7D_s%20%5Cright%29%5E2%20%5Cright%29%0A " 
+\mathrm{MSE}_s = \frac{1}{N} \sum_{n=1}^{N} \left( \left(y_n - \mu_{n,s} \right)^2 \right) = \frac{1}{N} \sum_{n=1}^{N} \left( \left(y_n - \mathbf{x}_{n,:} \boldsymbol{\beta}_s \right)^2 \right)
+")
+
+The ![s](https://latex.codecogs.com/png.latex?s "s")-th posterior sample on the RMSE is then:
+
+![ 
+\\mathrm{RMSE}\_s = \\sqrt{\\mathrm{MSE}\_{s}}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7BRMSE%7D_s%20%3D%20%5Csqrt%7B%5Cmathrm%7BMSE%7D_%7Bs%7D%7D%0A " 
+\mathrm{RMSE}_s = \sqrt{\mathrm{MSE}_{s}}
+")
+
+Likewise, the ![s](https://latex.codecogs.com/png.latex?s "s")-th posterior sample on the MAE is calculated as:
+
+![ 
+\\mathrm{MAE}\_s = \\frac{1}{N} \\sum\_{n=1}^{N} \\left( \\left| y\_n - \\mu\_{n,s} \\right| \\right) = \\frac{1}{N} \\sum\_{n=1}^{N} \\left( \\left| y\_n - \\mathbf{x}\_{n,:} \\boldsymbol{\\beta}\_s \\right| \\right)
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7BMAE%7D_s%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bn%3D1%7D%5E%7BN%7D%20%5Cleft%28%20%5Cleft%7C%20y_n%20-%20%5Cmu_%7Bn%2Cs%7D%20%5Cright%7C%20%5Cright%29%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bn%3D1%7D%5E%7BN%7D%20%5Cleft%28%20%5Cleft%7C%20y_n%20-%20%5Cmathbf%7Bx%7D_%7Bn%2C%3A%7D%20%5Cboldsymbol%7B%5Cbeta%7D_s%20%5Cright%7C%20%5Cright%29%0A " 
+\mathrm{MAE}_s = \frac{1}{N} \sum_{n=1}^{N} \left( \left| y_n - \mu_{n,s} \right| \right) = \frac{1}{N} \sum_{n=1}^{N} \left( \left| y_n - \mathbf{x}_{n,:} \boldsymbol{\beta}_s \right| \right)
+")
+
+RMSE and MAE are accuracy measures, but when we were visualized the predicted vs observed figure we discussed the *correlation* between the predictions and the observations. The correlation is usually discussed in terms of the coefficient of determination or ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") (R-squared) metric. R-squared is the proportion of variance explained by the model and is usually defined as in non-Bayesian model as:
+
+![ 
+\\mathrm{classical} \\quad R^2 = 1 - \\frac{\\mathrm{MSE\\left( \\hat{\\boldsymbol{\\beta}} \\right)}}{\\mathrm{Var}\\left( y \\right)}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7Bclassical%7D%20%5Cquad%20R%5E2%20%3D%201%20-%20%5Cfrac%7B%5Cmathrm%7BMSE%5Cleft%28%20%5Chat%7B%5Cboldsymbol%7B%5Cbeta%7D%7D%20%5Cright%29%7D%7D%7B%5Cmathrm%7BVar%7D%5Cleft%28%20y%20%5Cright%29%7D%0A " 
+\mathrm{classical} \quad R^2 = 1 - \frac{\mathrm{MSE\left( \hat{\boldsymbol{\beta}} \right)}}{\mathrm{Var}\left( y \right)}
+")
+
+The numerator is written to represent that the mean squared error is evaluated at the MLEs on the linear predictor parameters. The denominator is the variance of the response ![y](https://latex.codecogs.com/png.latex?y "y") over the ![N](https://latex.codecogs.com/png.latex?N "N") observations.
+
+In a Bayesian framework, as with RMSE and MAE, we do not have a single value for ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2"). Instead, we have a posterior distribution on ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2"). However, the expression for ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") that is used in Bayesian approaches is slightly different from that given above. The ![s](https://latex.codecogs.com/png.latex?s "s")-th posterior sample's ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") value is calculated as:
+
+![ 
+\\mathrm{Bayesian} \\quad \\left(R^2\\right)\_s = \\frac{\\mathrm{Var}\\left(\\mu\_s\\right)}{\\mathrm{Var}\\left( \\mu\_s \\right) + \\mathrm{Var}\\left(y - \\mu\_s \\right)}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7BBayesian%7D%20%5Cquad%20%5Cleft%28R%5E2%5Cright%29_s%20%3D%20%5Cfrac%7B%5Cmathrm%7BVar%7D%5Cleft%28%5Cmu_s%5Cright%29%7D%7B%5Cmathrm%7BVar%7D%5Cleft%28%20%5Cmu_s%20%5Cright%29%20%2B%20%5Cmathrm%7BVar%7D%5Cleft%28y%20-%20%5Cmu_s%20%5Cright%29%7D%0A " 
+\mathrm{Bayesian} \quad \left(R^2\right)_s = \frac{\mathrm{Var}\left(\mu_s\right)}{\mathrm{Var}\left( \mu_s \right) + \mathrm{Var}\left(y - \mu_s \right)}
+")
+
+In the above formula, the variances are calculated across the ![N](https://latex.codecogs.com/png.latex?N "N") observations. The numerator is therefore the variance of the linear predictor across the ![N](https://latex.codecogs.com/png.latex?N "N") observations for the ![s](https://latex.codecogs.com/png.latex?s "s")-th posterior sample. The denomiator includes the variance of the error/residual between the linear predictor and the observed responses across the ![N](https://latex.codecogs.com/png.latex?N "N") observations.
+
+The code chunk below defines a function which calculates and summarizes the RMSE, MAE, and the Bayesian ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") performance metrics. The `post_pred_error_summarize()` function is setup similar to `post_pred_summarize()`. The difference however is that the additional argument `y_ref` is the vector of (noisy) responses we are comparing to. The RMSE and MAE are calculated two different ways in `post_pred_error_summarize()`. The first is as described above, in relation to the linear predictor. The errors are also calculated in relation to the random (alleatory) prediction to provide further practice summarizing the predictions. The Bayesian ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") is calculated just as described above.
 
 ``` r
 post_pred_error_summarize <- function(Xnew, Bmat, sigma_vector, y_ref)
@@ -831,10 +1054,12 @@ post_pred_error_summarize <- function(Xnew, Bmat, sigma_vector, y_ref)
   RefMat <- t(matrix(rep(y_ref, S), S, byrow = TRUE))
   
   # calculate the errors
-  mu_errors_mat <- Umat - RefMat
-  y_errors_mat <- Ymat - RefMat
+  mu_errors_mat <- RefMat - Umat
+  y_errors_mat <- RefMat - Ymat
   
   # summarize the linear predictor errors - calculate RMSE and MAE
+  # each column is a separate posterior sample, so first need to 
+  # summarize across the rows (the observations)
   mu_rmse_vec <- sqrt(colMeans(mu_errors_mat^2))
   mu_mae_vec <- colMeans(abs(mu_errors_mat))
   
@@ -856,13 +1081,22 @@ post_pred_error_summarize <- function(Xnew, Bmat, sigma_vector, y_ref)
   y_mae_q05 <- quantile(y_mae_vec, 0.05)
   y_mae_q95 <- quantile(y_mae_vec, 0.95)
   
+  # calculate the Bayes R-squared
+  mu_var_vec <- apply(Umat, 2, var)
+  error_var_vec <- apply(mu_errors_mat, 2, var)
+  bayes_R2_vec <- mu_var_vec / (mu_var_vec + error_var_vec)
+  
+  mu_R2_avg <- mean(bayes_R2_vec)
+  mu_R2_q05 <- quantile(bayes_R2_vec, 0.05)
+  mu_R2_q95 <- quantile(bayes_R2_vec, 0.95)
+  
   # package together
   tibble::tibble(
-    pred_from = rep(c("mu", "y"), each = 2),
-    metric_name = rep(c("rmse", "mae"), times = 2),
-    metric_avg = c(mu_rmse_avg, mu_mae_avg, y_rmse_avg, y_mae_avg),
-    metric_q05 = c(mu_rmse_q05, mu_mae_q05, y_rmse_q05, y_mae_q05),
-    metric_q95 = c(mu_rmse_q95, mu_mae_q95, y_rmse_q95, y_mae_q95)
+    pred_from = c(rep(c("mu", "y"), each = 2), "mu"),
+    metric_name = c(rep(c("rmse", "mae"), times = 2), "R2"),
+    metric_avg = c(mu_rmse_avg, mu_mae_avg, y_rmse_avg, y_mae_avg, mu_R2_avg),
+    metric_q05 = c(mu_rmse_q05, mu_mae_q05, y_rmse_q05, y_mae_q05, mu_R2_q05),
+    metric_q95 = c(mu_rmse_q95, mu_mae_q95, y_rmse_q95, y_mae_q95, mu_R2_q95)
   )
 }
 ```
@@ -892,16 +1126,18 @@ Now, calculate the posterior error summary statistics for each model type.
 set.seed(8006)
 post_pred_error_train_all <- purrr::map2_dfr(laplace_results,
                                              list(design_int, design_lin, design_quad,
-                                                  design_cube, design_4, design_5),
+                                                  design_cube, design_4, design_5,
+                                                  design_6, design_7, design_8),
                                              errors_from_laplace,
                                              num_post_samples = 1e4,
                                              y_target = train_df$y)
 ```
 
-Compare the error metric posterior summaries across the model types.
+The figure below compares the performance metric posterior summaries across the model types. When the RMSE or MAE descreases sharply from the linear to quadratic relationship, the ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") value spikes up close to 1.
 
 ``` r
 post_pred_error_train_all %>% 
+  filter(pred_from == "mu") %>% 
   ggplot(mapping = aes(x = as.factor(J))) +
   geom_linerange(mapping = aes(ymin = metric_q05,
                                ymax = metric_q95,
@@ -915,13 +1151,69 @@ post_pred_error_train_all %>%
              size = 2.85,
              position = position_dodge(0.25)) +
   facet_wrap(~metric_name, scales = "free_y") +
-  ggthemes::scale_color_colorblind("Prediction based on") +
+  ggthemes::scale_color_colorblind(guide = FALSE) +
   labs(y = "metric value") +
   theme_bw() +
   theme(legend.position = "top")
 ```
 
 ![](lecture_08_github_files/figure-markdown_github/viz_compare_error_summaries-1.png)
+
+Let's focus on the ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") performance metric, just for ![J&gt;1](https://latex.codecogs.com/png.latex?J%3E1 "J>1").
+
+``` r
+post_pred_error_train_all %>% 
+  filter(pred_from == "mu") %>% 
+  filter(metric_name == "R2") %>% 
+  filter(J > 1) %>% 
+  ggplot(mapping = aes(x = as.factor(J))) +
+  geom_linerange(mapping = aes(ymin = metric_q05,
+                               ymax = metric_q95,
+                               group = interaction(pred_from, metric_name, J),
+                               color = pred_from),
+                 size = 1.25,
+                 position = position_dodge(0.25)) +
+  geom_point(mapping = aes(y = metric_avg,
+                           group = interaction(pred_from, metric_name, J),
+                           color = pred_from),
+             size = 2.85,
+             position = position_dodge(0.25)) +
+  facet_wrap(~metric_name, scales = "free_y") +
+  ggthemes::scale_color_colorblind(guide = FALSE) +
+  labs(y = "metric value") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_compare_error_summaries_zoom-1.png)
+
+Likewise, zoom in on the RMSE metric just for ![J&gt;1](https://latex.codecogs.com/png.latex?J%3E1 "J>1").
+
+``` r
+post_pred_error_train_all %>% 
+  filter(pred_from == "mu") %>% 
+  filter(metric_name == "rmse") %>% 
+  filter(J > 1) %>% 
+  ggplot(mapping = aes(x = as.factor(J))) +
+  geom_linerange(mapping = aes(ymin = metric_q05,
+                               ymax = metric_q95,
+                               group = interaction(pred_from, metric_name, J),
+                               color = pred_from),
+                 size = 1.25,
+                 position = position_dodge(0.25)) +
+  geom_point(mapping = aes(y = metric_avg,
+                           group = interaction(pred_from, metric_name, J),
+                           color = pred_from),
+             size = 2.85,
+             position = position_dodge(0.25)) +
+  facet_wrap(~metric_name, scales = "free_y") +
+  ggthemes::scale_color_colorblind(guide = FALSE) +
+  labs(y = "metric value") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_compare_error_summaries_zoom_b-1.png)
 
 ### Bayesian model selection
 
@@ -949,11 +1241,29 @@ p \\left(\\mathbf{y}\\mid \\mathbf{X}\\right) = \\int{p\\left( \\mathbf{y} \\mid
 p \left(\mathbf{y}\mid \mathbf{X}\right) = \int{p\left( \mathbf{y} \mid \mathbf{X},\boldsymbol{\theta}\right) p\left(\boldsymbol{\theta}\right) d\boldsymbol{\theta}}
 ")
 
-The first term within the integral is the likelihood, $p( ,) $. The second term is the prior distribution on the unknown parameters, ![p\\left(\\boldsymbol{\\theta}\\right)](https://latex.codecogs.com/png.latex?p%5Cleft%28%5Cboldsymbol%7B%5Ctheta%7D%5Cright%29 "p\left(\boldsymbol{\theta}\right)"). We are therefore averaging, or marginalizing, out the parameters with respect to the prior. The marginal likelihood is therefore the probability of the observations, accounting for all possible ways the model can fit the data.
+The first term within the integral is the likelihood, $p( ,) $. The second term is the prior distribution on the unknown parameters, ![p\\left(\\boldsymbol{\\theta}\\right)](https://latex.codecogs.com/png.latex?p%5Cleft%28%5Cboldsymbol%7B%5Ctheta%7D%5Cright%29 "p\left(\boldsymbol{\theta}\right)"). We are therefore averaging, or marginalizing, out the parameters with respect to the prior. The marginal likelihood is therefore the probability of the observed responses, accounting for all possible ways the model can fit the data.
 
-If we can compute the marginal likelihood, we can use it to compare models, since by it's very nature it accounts for the accuracy, the number of parameters, and the possible values of the parameters. Fortunately, with the Laplace approximation we have a way to estimate the evidence. This estimate is not perfect, but we can use it to compare the models, with respect to our approximate computational strategy.
+It is important to note that the integration of the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}") is over multiple dimensions. Integrating over many dimensions can be challenging even if we estimate the integral computationally. The simplest model we have considered so far, is the intercept only model. It contains two unknown parameters, ![\\boldsymbol{\\theta} = \\{ \\beta\_0, \\sigma \\}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D%20%3D%20%5C%7B%20%5Cbeta_0%2C%20%5Csigma%20%5C%7D "\boldsymbol{\theta} = \{ \beta_0, \sigma \}"). The integral is a two-dimensional integral:
 
-If we define the evidence for model a as ![p\\left(\\mathbf{y} \\mid \\mathbf{X}, M\_a\\right)](https://latex.codecogs.com/png.latex?p%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%20M_a%5Cright%29 "p\left(\mathbf{y} \mid \mathbf{X}, M_a\right)") we can compare two models by calculating the ratios of their marginal likelihoods. This ratio is referred to as the **Bayes Factor**. The Bayes Factor of model 0 relative to model 1 is therefore:
+![ 
+p \\left(\\mathbf{y}\\mid \\mathbf{X}\\right) = \\int{ \\int{p\\left( \\mathbf{y} \\mid \\mathbf{X},\\beta\_0, \\sigma\\right) p\\left(\\beta\_0, \\sigma\\right) d\\beta\_0 d\\sigma} }
+](https://latex.codecogs.com/png.latex?%20%0Ap%20%5Cleft%28%5Cmathbf%7By%7D%5Cmid%20%5Cmathbf%7BX%7D%5Cright%29%20%3D%20%5Cint%7B%20%5Cint%7Bp%5Cleft%28%20%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%5Cbeta_0%2C%20%5Csigma%5Cright%29%20p%5Cleft%28%5Cbeta_0%2C%20%5Csigma%5Cright%29%20d%5Cbeta_0%20d%5Csigma%7D%20%7D%0A " 
+p \left(\mathbf{y}\mid \mathbf{X}\right) = \int{ \int{p\left( \mathbf{y} \mid \mathbf{X},\beta_0, \sigma\right) p\left(\beta_0, \sigma\right) d\beta_0 d\sigma} }
+")
+
+If we are able to compute the marginal likelihood, we can use it to compare models. By integrating over the prior, the marginal likelihood considers all possible values the parameters are "allowed" to take. Since the marginal likelihood averages the likelihood function, it accounts for how accurate the linear predictor is relative to the observed responses. Lastly, because of the integration, it "knows" the total number of parameters, or degrees of freedom associated with a model. The marginal likelihood therefore fully accounts for accuracy while penalizing for complexity. As mentioned previously, the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}") is very challenging to compute.
+
+Fortunately, with the Laplace approximation we have a way to estimate the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}") This estimate is not perfect, but we can use it to compare the models, within our approximate computational strategy. If we define the posterior mode (the MAP) to be ![\\hat{\\boldsymbol{\\theta}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D "\hat{\boldsymbol{\theta}}") and and we have ![P](https://latex.codecogs.com/png.latex?P "P") total unknown parameters, the Laplace approximation to the ![\\log\\left\[\\mathrm{Evidence} \\right\]](https://latex.codecogs.com/png.latex?%5Clog%5Cleft%5B%5Cmathrm%7BEvidence%7D%20%5Cright%5D "\log\left[\mathrm{Evidence} \right]") is:
+
+![ 
+\\frac{P}{2}\\log\\left\[2\\pi\\right\] -\\frac{1}{2} \\log\\left\[ \\lvert \\mathbf{H}\\rvert\_{\\hat{\\boldsymbol{\\theta}}} \\rvert \\right\] + \\log \\left\[\\mathbf{y} \\mid \\mathbf{X},\\hat{\\boldsymbol{\\theta}} \\right\] + \\log \\left\[p\\left(\\hat{\\boldsymbol{\\theta}}\\right) \\right\]
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7BP%7D%7B2%7D%5Clog%5Cleft%5B2%5Cpi%5Cright%5D%20-%5Cfrac%7B1%7D%7B2%7D%20%5Clog%5Cleft%5B%20%5Clvert%20%5Cmathbf%7BH%7D%5Crvert_%7B%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%7D%20%5Crvert%20%5Cright%5D%20%2B%20%5Clog%20%5Cleft%5B%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20%5Cright%5D%20%2B%20%5Clog%20%5Cleft%5Bp%5Cleft%28%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%5Cright%29%20%5Cright%5D%0A " 
+\frac{P}{2}\log\left[2\pi\right] -\frac{1}{2} \log\left[ \lvert \mathbf{H}\rvert_{\hat{\boldsymbol{\theta}}} \rvert \right] + \log \left[\mathbf{y} \mid \mathbf{X},\hat{\boldsymbol{\theta}} \right] + \log \left[p\left(\hat{\boldsymbol{\theta}}\right) \right]
+")
+
+ The term ![\\mathbf{H}\\rvert\_{\\hat{\\boldsymbol{\\theta}}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BH%7D%5Crvert_%7B%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%7D "\mathbf{H}\rvert_{\hat{\boldsymbol{\theta}}}") denotes that the Hessian matrix of the log-posterior is evaluated at the posterior mode, ![\\hat{\\boldsymbol{\\theta}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D "\hat{\boldsymbol{\theta}}"). By examining the formula above, you can guess that the log-determinant of the Hessian acts as a penalty term. We will discuss a more intuitive reason why later on.
+
+If we define the evidence for model ![a](https://latex.codecogs.com/png.latex?a "a") as ![p\\left(\\mathbf{y} \\mid \\mathbf{X}, M\_a\\right)](https://latex.codecogs.com/png.latex?p%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%20M_a%5Cright%29 "p\left(\mathbf{y} \mid \mathbf{X}, M_a\right)"), we can compare two models by calculating the ratios of their marginal likelihoods. This ratio is referred to as the **Bayes Factor**. The Bayes Factor of model 0 relative to model 1 is therefore:
 
 ![ 
 BF = \\frac{p\\left(\\mathbf{y} \\mid \\mathbf{X}, M\_0\\right)}{p\\left(\\mathbf{y} \\mid \\mathbf{X}, M\_1\\right)}
@@ -963,27 +1273,195 @@ BF = \frac{p\left(\mathbf{y} \mid \mathbf{X}, M_0\right)}{p\left(\mathbf{y} \mid
 
 If the Bayes Factor is much greater than one, then it is expected that the Model 0 is more plausible than Model 1.
 
-In fact, we can calculate the posterior probability of a model, in light of trying multiple models, through the evidence. Let's see how to do that for our specific example. Extract the log-evidence associated with each model:
+This concept can be extended to comparing multiple models. In fact, we can use the marginal likelihood to estimate the posterior probability that the data supports a model. To see how to do that, let's first extract the marginal likelihoods associated with all of the models we tried in this example:
 
 ``` r
 model_evidence <- purrr::map_dbl(laplace_results, "log_evidence")
 ```
 
-If we assume all models are equally probable *a priori* then the posterior model probabilities are just the evidence for each model divided by the sum of the evidences. As shown in the result below, the posterior probability of the quadratic relationship is almost 98%!
+If we assume all models are equally probable *a priori* then the posterior model probabilities are just the Evidence for each model divided by the sum of the Evidences. As shown in the result below, the posterior probability of the quadratic relationship is almost 98%!
 
 ``` r
-signif(100*exp(model_evidence) / sum(exp(model_evidence)), 4)
+signif(100*exp(model_evidence) / sum(exp(model_evidence)), 3)
 ```
 
-    ## [1] 1.321e-17 3.308e-18 9.769e+01 2.258e+00 4.648e-02 1.361e-03
+    ## [1] 1.30e-18 3.19e-19 9.77e+01 2.24e+00 4.59e-02 1.34e-03 4.70e-05 2.10e-06
+    ## [9] 9.28e-08
+
+Diffuse prior
+-------------
+
+Let's retry our model fitting and comparison exercise, but this time using a very diffuse prior on the linear predictor parameters. Instead of using a prior standard deviation of 2.5, we will now use a prior standard deviation of 25:
+
+![ 
+\\boldsymbol{\\beta} \\sim \\prod\_{j=0}^{J+1} \\left( \\mathrm{normal} \\left( \\beta\_j \\mid 0, 25 \\right) \\right)
+](https://latex.codecogs.com/png.latex?%20%0A%5Cboldsymbol%7B%5Cbeta%7D%20%5Csim%20%5Cprod_%7Bj%3D0%7D%5E%7BJ%2B1%7D%20%5Cleft%28%20%5Cmathrm%7Bnormal%7D%20%5Cleft%28%20%5Cbeta_j%20%5Cmid%200%2C%2025%20%5Cright%29%20%5Cright%29%0A " 
+\boldsymbol{\beta} \sim \prod_{j=0}^{J+1} \left( \mathrm{normal} \left( \beta_j \mid 0, 25 \right) \right)
+")
+
+The code chunk below defines a new list of required information, which uses `tau_beta = 25`.
+
+``` r
+info_diffuse <- list(
+  yobs = train_df$y,
+  mu_beta = 0,
+  tau_beta = 25,
+  sigma_rate = 1
+)
+```
+
+The code chunk below executes the laplace approximation on all 9 models, but now with the diffuse prior ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}").
+
+``` r
+set.seed(8051)
+laplace_diffuse <- purrr::map(list(design_int, design_lin, design_quad,
+                                   design_cube, design_4, design_5,
+                                   design_6, design_7, design_8),
+                              manage_poly_order,
+                              logpost_func = lm_logpost,
+                              my_settings = info_diffuse)
+```
+
+With the approximate posteriors in place, let's now make posterior predictions of the training set.
+
+``` r
+set.seed(8052)
+post_pred_train_dif <- purrr::map2_dfr(laplace_diffuse,
+                                       list(design_int, design_lin, design_quad,
+                                            design_cube, design_4, design_5,
+                                            design_6, design_7, design_8),
+                                       predict_from_laplace,
+                                       num_post_samples = 1e4)
+```
+
+The predicted vs observed figure for the diffuse prior case:
+
+``` r
+post_pred_train_dif %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_obs_diffuse-1.png)
+
+Focus just on the linear, quadratic, and 7th order relationships:
+
+``` r
+post_pred_train_dif %>% 
+  left_join(train_df %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(1, 2, 7)) %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_pred_vs_obs_diffuse_zoom-1.png)
+
+The code chunk below estimates the performance metrics for the case with the diffuse prior.
+
+``` r
+set.seed(8053)
+post_pred_error_train_dif <- purrr::map2_dfr(laplace_diffuse,
+                                             list(design_int, design_lin, design_quad,
+                                                  design_cube, design_4, design_5,
+                                                  design_6, design_7, design_8),
+                                             errors_from_laplace,
+                                             num_post_samples = 1e4,
+                                             y_target = train_df$y)
+```
+
+The figure below gives the Bayesian ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") and RMSE metric posterior summaries for the ![J&gt;1](https://latex.codecogs.com/png.latex?J%3E1 "J>1") models. The results are consistent with those from the more informative prior.
+
+``` r
+post_pred_error_train_all %>% 
+  filter(pred_from == "mu") %>% 
+  filter(metric_name %in% c("rmse", "R2")) %>% 
+  filter(J > 1) %>% 
+  ggplot(mapping = aes(x = as.factor(J))) +
+  geom_linerange(mapping = aes(ymin = metric_q05,
+                               ymax = metric_q95,
+                               group = interaction(pred_from, metric_name, J),
+                               color = pred_from),
+                 size = 1.25,
+                 position = position_dodge(0.25)) +
+  geom_point(mapping = aes(y = metric_avg,
+                           group = interaction(pred_from, metric_name, J),
+                           color = pred_from),
+             size = 2.85,
+             position = position_dodge(0.25)) +
+  facet_wrap(~metric_name, scales = "free_y") +
+  ggthemes::scale_color_colorblind(guide = FALSE) +
+  labs(y = "metric value") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+![](lecture_08_github_files/figure-markdown_github/check_diffuse_prior_error_metrics-1.png)
+
+Let's now extract approximate the marginal likelihood values associated with each model starting from the diffuse prior.
+
+``` r
+diffuse_evidence <- purrr::map_dbl(laplace_diffuse, "log_evidence")
+```
+
+Comparing all of the models based on their ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}") values reveals that the quadratic relationship is even more likely to be the right model! **Why do you think this is the result?**
+
+``` r
+signif(100*exp(diffuse_evidence) / sum(exp(diffuse_evidence)), 3)
+```
+
+    ## [1] 9.74e-17 2.45e-18 9.98e+01 2.28e-01 4.83e-04 1.39e-06 5.15e-09 3.78e-11
+    ## [9] 2.87e-13
 
 Noisy data
 ----------
 
-Our synthetic data example used a relatively low ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") value to generate the random observations. Let's retry everything, but this time with higher noise level of ![\\sigma\_{noisy} = 3.5](https://latex.codecogs.com/png.latex?%5Csigma_%7Bnoisy%7D%20%3D%203.5 "\sigma_{noisy} = 3.5"). Split the noisy dataset into the same 30 training points with respect to the ![x](https://latex.codecogs.com/png.latex?x "x") values.
+Our synthetic data example used a relatively low ![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\sigma") value to generate the random observations. Let's retry everything, but this time with higher noise level of ![\\sigma\_{noisy} = 2.75](https://latex.codecogs.com/png.latex?%5Csigma_%7Bnoisy%7D%20%3D%202.75 "\sigma_{noisy} = 2.75"). Split the noisy dataset into the same 30 training points with respect to the ![x](https://latex.codecogs.com/png.latex?x "x") values.
 
 ``` r
-sigma_noisy <- 3.5
+sigma_noisy <- 2.75
 
 ### evaluate linear predictor and generate random observations
 set.seed(8100)
@@ -1029,23 +1507,23 @@ noisy_df %>%
 
 ![](lecture_08_github_files/figure-markdown_github/viz_noisy_dataset_vs_quad-1.png)
 
-In the code chunk below, we reperform the Laplace approximation for each of the model types. We can use the exact same design matrices as we did before because the ![x](https://latex.codecogs.com/png.latex?x "x") values are still the same.
+In the code chunk below, we reperform the Laplace approximation for each of the model types. We can use the exact same design matrices as we did before because the ![x](https://latex.codecogs.com/png.latex?x "x") values are still the same. Let's continue to use the diffuse prior on the linear predictor parameters.
 
 ``` r
-info_noisy <- list(
+diffuse_noisy <- list(
   yobs = train_noisy$y,
   mu_beta = 0,
-  tau_beta = 2.5,
-  sigma_lwr = 0,
-  sigma_upr = 10
+  tau_beta = 25,
+  sigma_rate = 1.0
 )
 
 set.seed(8101)
 laplace_noisy <- purrr::map(list(design_int, design_lin, design_quad,
-                                 design_cube, design_4, design_5),
+                                 design_cube, design_4, design_5,
+                                 design_6, design_7, design_8),
                             manage_poly_order,
                             logpost_func = lm_logpost,
-                            my_settings = info_noisy)
+                            my_settings = diffuse_noisy)
 ```
 
 Let's check that each of the model types converged:
@@ -1054,7 +1532,7 @@ Let's check that each of the model types converged:
 purrr::map_chr(laplace_noisy, "converge")
 ```
 
-    ## [1] "YES" "YES" "YES" "YES" "YES" "YES"
+    ## [1] "YES" "YES" "YES" "YES" "YES" "YES" "YES" "YES" "YES"
 
 Look at the Laplace approximation result for the quadratic model.
 
@@ -1063,24 +1541,24 @@ laplace_noisy[[3]]
 ```
 
     ## $mode
-    ## [1]  0.2227645  0.6835104 -1.8547282  1.2671445
+    ## [1]  0.3427512  0.8878598 -2.0360100  0.9810242
     ## 
     ## $var_matrix
-    ##              [,1]        [,2]         [,3]         [,4]
-    ## [1,]  0.586716850  0.14299642 -0.232627281 -0.003640629
-    ## [2,]  0.142996424  0.54815307 -0.173296687 -0.004015120
-    ## [3,] -0.232627281 -0.17329669  0.280492060  0.003809219
-    ## [4,] -0.003640629 -0.00401512  0.003809219  0.017299949
+    ##               [,1]          [,2]          [,3]          [,4]
+    ## [1,]  3.734305e-01  1.017447e-01 -1.542363e-01 -2.566078e-05
+    ## [2,]  1.017447e-01  3.442155e-01 -1.156245e-01 -2.794791e-05
+    ## [3,] -1.542363e-01 -1.156245e-01  1.744176e-01  2.464201e-05
+    ## [4,] -2.566078e-05 -2.794791e-05  2.464201e-05  1.515111e-02
     ## 
     ## $log_evidence
-    ## [1] -86.80547
+    ## [1] -87.60736
     ## 
     ## $converge
     ## [1] "YES"
     ## 
     ## $iter_counts
     ## function 
-    ##       31
+    ##       40
 
 Next, make posterior predictions on the training set based on our approximate MVN posterior distributions.
 
@@ -1088,12 +1566,13 @@ Next, make posterior predictions on the training set based on our approximate MV
 set.seed(8102)
 post_pred_train_noisy <- purrr::map2_dfr(laplace_noisy,
                                          list(design_int, design_lin, design_quad,
-                                              design_cube, design_4, design_5),
+                                              design_cube, design_4, design_5,
+                                              design_6, design_7, design_8),
                                          predict_from_laplace,
                                          num_post_samples = 1e4)
 ```
 
-Let's first look at the predictions with respect the input ![x](https://latex.codecogs.com/png.latex?x "x"):
+Let's look at the predictions with respect the input ![x](https://latex.codecogs.com/png.latex?x "x"). Can you describe what the higher order models are doing in the figure below? Remember that the black squares are the *true* noise-free signal. The red dots are the *noisy* observations.
 
 ``` r
 post_pred_train_noisy %>% 
@@ -1125,7 +1604,7 @@ post_pred_train_noisy %>%
 
 ![](lecture_08_github_files/figure-markdown_github/reviz_pred_vs_x_noisy-1.png)
 
-Focus just on the second-order and fifth-order models:
+If the above figure is too busy, let's focus just on the quadratic and 7-th order polynomial relationships. Even though the noise level was over 6x greater than the previous example, the posterior predictions from the quadratic relationship appear quite close to the *true* noise-free qaudratic trend. The *noisy* observed training responses, are just that, noisy observations around the linear predictor. However, as shown below, the 7-th order polynomial has posterior predicted means (the white dots) usually closer to the *noisy* red dots, than the *true* black squares. The 7-th order polynomial is "flexible" enough to "explain" the noisy in the data. **Is this a good thing?**
 
 ``` r
 post_pred_train_noisy %>% 
@@ -1134,7 +1613,7 @@ post_pred_train_noisy %>%
                      mu_true = mu,
                      y_obs = y),
             by = "pred_id") %>% 
-  filter(J %in% c(2, 5)) %>% 
+  filter(J %in% c(2, 7)) %>% 
   ggplot(mapping = aes(x = x)) +
   geom_linerange(mapping = aes(ymin = y_q05,
                                ymax = y_q95,
@@ -1158,11 +1637,79 @@ post_pred_train_noisy %>%
 
 ![](lecture_08_github_files/figure-markdown_github/isolate_quad_and_5th_models-1.png)
 
-Next, look at the predicted-vs-observed figure.
+To get an idea about what's happening with the higher order models, let's summarize the posterior distributions on the ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}") parameters across all models. The function defined in the code chunk below extracts the posterior means and posterior standard deviations from the Laplace approximation result directly. The ![\\pm 1](https://latex.codecogs.com/png.latex?%5Cpm%201 "\pm 1")sigma and ![\\pm 2](https://latex.codecogs.com/png.latex?%5Cpm%202 "\pm 2")sigma posterior intervals around the posterior mean are calculated and stored as a `tibble` per parameter.
+
+``` r
+extract_beta_post_summaries <- function(length_beta, mvn_result)
+{
+  # posterior means
+  beta_means <- mvn_result$mode[1:length_beta]
+  
+  # posterior standard deviations
+  beta_sd <- sqrt(diag(mvn_result$var_matrix))[1:length_beta]
+  
+  # return the posterior mean +/-1sigma and +/-2sigma intervals
+  tibble::tibble(
+    post_mean = beta_means,
+    post_sd = beta_sd
+  ) %>% 
+    mutate(post_lwr_2 = post_mean - 2*post_sd,
+           post_upr_2 = post_mean + 2*post_sd,
+           post_lwr_1 = post_mean - 1*post_sd,
+           post_upr_1 = post_mean + 1*post_sd) %>% 
+    tibble::rowid_to_column("param_num") %>% 
+    mutate(beta_num = param_num - 1) %>% 
+    mutate(beta_name = sprintf("beta[%d]", beta_num),
+           J = length_beta -1)
+}
+```
+
+Let's now iterate over all of the models.
+
+``` r
+post_beta_summary_noisy <- purrr::map2_dfr(seq_along(laplace_noisy),
+                                           laplace_noisy,
+                                           extract_beta_post_summaries)
+```
+
+Let's now visualize the posterior summaries on all linear predictor parameters across all models. The code chunk below creates a figure which breaks up the results into separate facets per ![\\beta\_j](https://latex.codecogs.com/png.latex?%5Cbeta_j "\beta_j") parameter. The y-axis represents the parameter value and the x-axis corresponds to the separate models. All 9 models include an intercept, ![\\beta\_0](https://latex.codecogs.com/png.latex?%5Cbeta_0 "\beta_0") thus there are 9 separate results in the ![\\beta\_0](https://latex.codecogs.com/png.latex?%5Cbeta_0 "\beta_0") facet. Only the most complex model, ![J=8](https://latex.codecogs.com/png.latex?J%3D8 "J=8"), has the ![\\beta\_8](https://latex.codecogs.com/png.latex?%5Cbeta_8 "\beta_8") parameter which is why the ![\\beta\_8](https://latex.codecogs.com/png.latex?%5Cbeta_8 "\beta_8") facet contains a single model. The (marginal) posterior on the ![\\boldsymbol{\\beta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta%7D "\boldsymbol{\beta}") parameters are represented by a dot to denote the posterior mean, a thick vertical line to denote the ![\\pm1](https://latex.codecogs.com/png.latex?%5Cpm1 "\pm1")sigma interval, and the thin vertical line shows the ![\\pm2](https://latex.codecogs.com/png.latex?%5Cpm2 "\pm2")sigma interval around the posterior mean. Thus, there is approximately 95% posterior probability the parameter is contained in the interval spanned by the thin vertical lines. Two sets of horizontal reference lines are displayed in each facet. The solid grey line corresponds to a parameter value of 0. The dashed red line denotes the *true* parameter value used to generate the *true* noise-free signal. All parameters after ![\\beta\_2](https://latex.codecogs.com/png.latex?%5Cbeta_2 "\beta_2") have a true value of 0 because they were not included in the *true* noise-free relationship.
+
+``` r
+post_beta_summary_noisy %>% 
+  ggplot(mapping = aes(x = as.factor(J))) +
+  geom_hline(yintercept = 0, color = "grey50") +
+  geom_linerange(mapping = aes(group = interaction(J, beta_name),
+                               ymin = post_lwr_2,
+                               ymax = post_upr_2),
+                 color = "grey30", size = .5) +
+  geom_linerange(mapping = aes(group = interaction(J, beta_name),
+                               ymin = post_lwr_1,
+                               ymax = post_upr_1),
+                 color = "black", size = 1.25) +
+  geom_point(mapping = aes(group = interaction(J, beta_name),
+                           y = post_mean),
+             color = "black", size = 2) +
+  geom_hline(data = tibble::tibble(beta_name = sprintf("beta[%d]", 0:8),
+                                   beta_true_val = c(beta_true, rep(0, 6))),
+             mapping = aes(yintercept = beta_true_val),
+             color = "red", linetype = "dashed") +
+  facet_wrap(~beta_name, labeller = label_parsed,
+             scales = "free") +
+  labs(y = expression(beta)) +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/show_beta_post_summaries-1.png)
+
+Look at the posterior summaries on the ![\\beta\_2](https://latex.codecogs.com/png.latex?%5Cbeta_2 "\beta_2") and ![\\beta\_4](https://latex.codecogs.com/png.latex?%5Cbeta_4 "\beta_4") parameters within the ![J=7](https://latex.codecogs.com/png.latex?J%3D7 "J=7") and ![J=8](https://latex.codecogs.com/png.latex?J%3D8 "J=8") relationships. The posterior means are "far" from 0 with values near 15 and -20, for ![\\beta\_2](https://latex.codecogs.com/png.latex?%5Cbeta_2 "\beta_2") and ![\\beta\_4](https://latex.codecogs.com/png.latex?%5Cbeta_4 "\beta_4"), respectively. However, what's even more striking is that the posteriors are definitely non-zero. The middle 95% uncertainty intervals are above parameter values of 5 and -5, respectively.
+
+The ![J=7](https://latex.codecogs.com/png.latex?J%3D7 "J=7") and ![J=8](https://latex.codecogs.com/png.latex?J%3D8 "J=8") model behavior is therefore due to the several of the parameters taking "large" values. The 4th order terms are therefore amplified to provide sufficient "flexibility" to match the observations. These large parameter values are "allowed" because we used a sufficiently diffuse prior.
+
+Now that we know why the models are behaving the way they are, how can we go about assessing their performance? In a real problem, we will not know the *true* noise-free signal. We will only have the *noisy* observations. So if we compare our model predictions to the observed responses, what do you think those performance metrics will tell us? Let's first consider the predicted vs observed figure:
 
 ``` r
 post_pred_train_noisy %>% 
-  left_join(train_df %>% 
+  left_join(train_noisy %>% 
               rename(pred_id = obs_id, 
                      mu_true = mu,
                      y_obs = y),
@@ -1179,6 +1726,8 @@ post_pred_train_noisy %>%
   geom_point(mapping = aes(y = mu_avg),
              shape = 21, size = 2.25, color = "steelblue",
              fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   facet_wrap(~J, labeller = "label_both") +
   labs(y = "Predicted response",
@@ -1188,22 +1737,123 @@ post_pred_train_noisy %>%
 
 ![](lecture_08_github_files/figure-markdown_github/doublecheck_pred_v_obs_noisy-1.png)
 
-Calculate the posterior error metrics for each model type.
+As we did previously, let's focus on the quadratic and 7th order polynomial. The black squares still denote the *true* noise free signal. The quadratic relationship may not follow the "45-degree" line, but posterior predictions compare quite well with the black squares!
+
+``` r
+post_pred_train_noisy %>% 
+  left_join(train_noisy %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(2, 7)) %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  geom_point(mapping = aes(y = mu_true),
+             shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/doublecheck_pred_v_obs_noisy_zoom-1.png)
+
+We had already seen that the quadratic relationship correctly captures the *true* noise-free trend. But, if all we had available to us were the *noisy* responses, would the predicted vs observed figure tell us the quadratic relationship is the correct formulation? The figure below is the same as the above figure, except with the black squares removed. Based on the figure below, which of the two models would you feel is better?
+
+``` r
+post_pred_train_noisy %>% 
+  left_join(train_noisy %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(2, 7)) %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  geom_linerange(mapping = aes(ymin = y_q05,
+                               ymax = y_q95,
+                               group = interaction(pred_id, J)),
+                 color = "grey30") +
+  geom_linerange(mapping = aes(ymin = mu_q05,
+                               ymax = mu_q95,
+                               group = interaction(pred_id, J)),
+                 color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 2.25, color = "steelblue",
+             fill = "white") +
+  # geom_point(mapping = aes(y = mu_true),
+  #            shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/doublecheck_pred_v_obs_noisy_zoom_b-1.png)
+
+We routinely work with predictive *distributions* in a Bayesian setting. If you have worked with models previously, visualizing and assessing performance under uncertainty might be new to you. You may have seen predicted vs observed figures before, but they were most likely between predicted *point estimates* vs observations. The figure below simply shows the posterior predicted means with respect to the observed responses. If this was all we visualized, which relationship would you think is fitting the observations better?
+
+``` r
+post_pred_train_noisy %>% 
+  left_join(train_noisy %>% 
+              rename(pred_id = obs_id, 
+                     mu_true = mu,
+                     y_obs = y),
+            by = "pred_id") %>% 
+  filter(J %in% c(2, 7)) %>% 
+  ggplot(mapping = aes(x = y_obs)) +
+  # geom_linerange(mapping = aes(ymin = y_q05,
+  #                              ymax = y_q95,
+  #                              group = interaction(pred_id, J)),
+  #                color = "grey30") +
+  # geom_linerange(mapping = aes(ymin = mu_q05,
+  #                              ymax = mu_q95,
+  #                              group = interaction(pred_id, J)),
+  #                color = "steelblue", size = 1.85) +
+  geom_point(mapping = aes(y = mu_avg),
+             shape = 21, size = 4, color = "steelblue",
+             fill = "white") +
+  # geom_point(mapping = aes(y = mu_true),
+  #            shape = 0, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~J, labeller = "label_both") +
+  labs(y = "Predicted response",
+       x = "Observed response") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/doublecheck_pred_v_obs_noisy_zoom_c-1.png)
+
+Let's now calculate the posterior error metrics for ![J=0](https://latex.codecogs.com/png.latex?J%3D0 "J=0") through ![J=8](https://latex.codecogs.com/png.latex?J%3D8 "J=8"). Based on the predicted vs observed figures, which relationships do you think will have the best performance metric values? Remember that, as in a real problem, the performance metrics are calculated with respect to the *noisy* observations.
 
 ``` r
 set.seed(8103)
 post_pred_error_train_noisy <- purrr::map2_dfr(laplace_noisy,
                                                list(design_int, design_lin, design_quad,
-                                                    design_cube, design_4, design_5),
+                                                    design_cube, design_4, design_5,
+                                                    design_6, design_7, design_8),
                                                errors_from_laplace,
                                                num_post_samples = 1e4,
                                                y_target = train_noisy$y)
 ```
 
-Compare the model types based on the error metrics.
+Visualizing the RMSE, MAE, and the ![R^2](https://latex.codecogs.com/png.latex?R%5E2 "R^2") posterior summaries reveals, that the ![J=7](https://latex.codecogs.com/png.latex?J%3D7 "J=7") and ![J=8](https://latex.codecogs.com/png.latex?J%3D8 "J=8") models are considered the best. A "step change"" still exists between the linear and quadratic relationships, the RMSE and MAE both decrease sharply between ![J=1](https://latex.codecogs.com/png.latex?J%3D1 "J=1") and ![J=1](https://latex.codecogs.com/png.latex?J%3D1 "J=1"). However, a second smaller "step change" occurs between ![J=6](https://latex.codecogs.com/png.latex?J%3D6 "J=6") and ![J=7](https://latex.codecogs.com/png.latex?J%3D7 "J=7").Compare the model types based on the error metrics.
 
 ``` r
 post_pred_error_train_noisy %>% 
+  filter(pred_from == "mu") %>% 
   ggplot(mapping = aes(x = as.factor(J))) +
   geom_linerange(mapping = aes(ymin = metric_q05,
                                ymax = metric_q95,
@@ -1217,7 +1867,7 @@ post_pred_error_train_noisy %>%
              size = 2.85,
              position = position_dodge(0.25)) +
   facet_wrap(~metric_name, scales = "free_y") +
-  ggthemes::scale_color_colorblind("Prediction based on") +
+  ggthemes::scale_color_colorblind(guide = FALSE) +
   labs(y = "metric value") +
   theme_bw() +
   theme(legend.position = "top")
@@ -1225,7 +1875,7 @@ post_pred_error_train_noisy %>%
 
 ![](lecture_08_github_files/figure-markdown_github/doublecheck_error_metrics_noisy-1.png)
 
-Lastly, calculate the posterior probability for each model, based on the approximate evidence.
+The performance metrics calculated with respect to the training set are not helping us. We would be fooled by the noise into thinking the highest order, the most complex, models are the best. **We will reach the same conclusion if we compare the models using the marginal likelihood, the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}")?** The code chunk below extracts the log of the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}") for each model and then estimates the posterior probability per model.
 
 ``` r
 noisy_evidence <- purrr::map_dbl(laplace_noisy, "log_evidence")
@@ -1233,4 +1883,60 @@ noisy_evidence <- purrr::map_dbl(laplace_noisy, "log_evidence")
 signif(100*exp(noisy_evidence) / sum(exp(noisy_evidence)), 4)
 ```
 
-    ## [1]  8.1710  2.9930 72.8000 13.0300  2.6760  0.3253
+    ## [1] 2.671e+01 9.044e-01 7.120e+01 1.172e+00 1.681e-02 3.519e-04 2.651e-05
+    ## [8] 6.689e-06 2.416e-07
+
+Let's visualize the posterior model probability with a bar chart to make it easier to see the difference between the models. As shown below, the quadratic relationship, ![J=2](https://latex.codecogs.com/png.latex?J%3D2 "J=2"), has the highest posterior probability! The model with the second highest probabilit is the intercept-only model, ![J=0](https://latex.codecogs.com/png.latex?J%3D0 "J=0"). All models above 4th order, ![J&gt;4](https://latex.codecogs.com/png.latex?J%3E4 "J>4"), have posterior probabilities of essentially zero.
+
+``` r
+tibble::tibble(
+  J = seq_along(noisy_evidence) - 1,
+  model_prob = exp(noisy_evidence) / sum(exp(noisy_evidence))
+) %>% 
+  ggplot(mapping = aes(x = as.factor(J),
+                       y = model_prob)) +
+  geom_bar(stat = "identity") + 
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(y = "Posterior model probability") +
+  theme_bw()
+```
+
+![](lecture_08_github_files/figure-markdown_github/viz_noisy_evidence-1.png)
+
+What's going on? Does the marginal likelihood know the *true* noise-free value? No. The marginal likelihood *marginalizes* or **integrates** over the *prior*. All parameter values allowed by the prior are therefore considered. As we have seen, the relationships with more terms have the lowest error metrics. They are "flexible" models because they have more terms and thus more parameters to fit the observations. Flexibility, or complexity, is a double-edged sword. We want a model complex enough to resolve the input to output relationships we care about. But, we do not want to be so complex that we are essentially *interpolating* the noise. We want to find the *simplest* model that captures the *noise-free* trend. The marginal likelihood, the ![\\mathrm{Evidence}](https://latex.codecogs.com/png.latex?%5Cmathrm%7BEvidence%7D "\mathrm{Evidence}"), is helping us find that model.
+
+To help understand why, let's return to the Laplace approximation's estimate to the log marginal likelihood:
+
+![ 
+\\frac{P}{2}\\log\\left\[2\\pi\\right\] -\\frac{1}{2} \\log\\left\[ \\lvert \\mathbf{H}\\rvert\_{\\hat{\\boldsymbol{\\theta}}} \\rvert \\right\] + \\log \\left\[\\mathbf{y} \\mid \\mathbf{X},\\hat{\\boldsymbol{\\theta}} \\right\] + \\log \\left\[p\\left(\\hat{\\boldsymbol{\\theta}}\\right) \\right\]
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7BP%7D%7B2%7D%5Clog%5Cleft%5B2%5Cpi%5Cright%5D%20-%5Cfrac%7B1%7D%7B2%7D%20%5Clog%5Cleft%5B%20%5Clvert%20%5Cmathbf%7BH%7D%5Crvert_%7B%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%7D%20%5Crvert%20%5Cright%5D%20%2B%20%5Clog%20%5Cleft%5B%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20%5Cright%5D%20%2B%20%5Clog%20%5Cleft%5Bp%5Cleft%28%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%5Cright%29%20%5Cright%5D%0A " 
+\frac{P}{2}\log\left[2\pi\right] -\frac{1}{2} \log\left[ \lvert \mathbf{H}\rvert_{\hat{\boldsymbol{\theta}}} \rvert \right] + \log \left[\mathbf{y} \mid \mathbf{X},\hat{\boldsymbol{\theta}} \right] + \log \left[p\left(\hat{\boldsymbol{\theta}}\right) \right]
+")
+
+ In the case of an infinitely diffuse prior, the impact of the log-prior goes away, the log marginal likelihood estimate is therefore:
+
+![ 
+\\frac{P}{2}\\log\\left\[2\\pi\\right\] -\\frac{1}{2} \\log\\left\[ \\lvert \\mathbf{H}\\rvert\_{\\hat{\\boldsymbol{\\theta}}} \\rvert \\right\] + \\log \\left\[\\mathbf{y} \\mid \\mathbf{X},\\hat{\\boldsymbol{\\theta}} \\right\]
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7BP%7D%7B2%7D%5Clog%5Cleft%5B2%5Cpi%5Cright%5D%20-%5Cfrac%7B1%7D%7B2%7D%20%5Clog%5Cleft%5B%20%5Clvert%20%5Cmathbf%7BH%7D%5Crvert_%7B%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%7D%20%5Crvert%20%5Cright%5D%20%2B%20%5Clog%20%5Cleft%5B%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20%5Cright%5D%0A " 
+\frac{P}{2}\log\left[2\pi\right] -\frac{1}{2} \log\left[ \lvert \mathbf{H}\rvert_{\hat{\boldsymbol{\theta}}} \rvert \right] + \log \left[\mathbf{y} \mid \mathbf{X},\hat{\boldsymbol{\theta}} \right]
+")
+
+ The Hessian matrix consists of summing up the local curvature associated with each of the ![N](https://latex.codecogs.com/png.latex?N "N") independent likelihoods. Assuming it is well behaved, we can approximate the Hessian matrix based on a fixed matrix ![\\mathbf{A}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BA%7D "\mathbf{A}"):
+
+![ 
+\\log \\left\[\\lvert \\mathbf{H} \\rvert \\right\] \\approx \\log \\left\[N^{P} \\lvert \\mathbf{H} \\rvert \\right\] = P\\log\\left\[N\\right\] + \\log\\left\[ \\lvert \\mathbf{A} \\rvert \\right\]
+](https://latex.codecogs.com/png.latex?%20%0A%5Clog%20%5Cleft%5B%5Clvert%20%5Cmathbf%7BH%7D%20%5Crvert%20%5Cright%5D%20%5Capprox%20%5Clog%20%5Cleft%5BN%5E%7BP%7D%20%5Clvert%20%5Cmathbf%7BH%7D%20%5Crvert%20%5Cright%5D%20%3D%20P%5Clog%5Cleft%5BN%5Cright%5D%20%2B%20%5Clog%5Cleft%5B%20%5Clvert%20%5Cmathbf%7BA%7D%20%5Crvert%20%5Cright%5D%0A " 
+\log \left[\lvert \mathbf{H} \rvert \right] \approx \log \left[N^{P} \lvert \mathbf{H} \rvert \right] = P\log\left[N\right] + \log\left[ \lvert \mathbf{A} \rvert \right]
+")
+
+ Substituting this expression into the Laplace approximation's log marginal likelihood estimate and dropping all terms that do not involve the number of observations we have the following estimate to the log marginal likelihood:
+
+![ 
+\\log \\left\[\\mathbf{y} \\mid \\mathbf{X}, \\hat{\\boldsymbol{\\theta}} \\right\] - \\frac{P}{2} \\log\\left\[N\\right\]
+](https://latex.codecogs.com/png.latex?%20%0A%5Clog%20%5Cleft%5B%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%2C%20%5Chat%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20%5Cright%5D%20-%20%5Cfrac%7BP%7D%7B2%7D%20%5Clog%5Cleft%5BN%5Cright%5D%0A " 
+\log \left[\mathbf{y} \mid \mathbf{X}, \hat{\boldsymbol{\theta}} \right] - \frac{P}{2} \log\left[N\right]
+")
+
+ This approximation is known as the Bayesian Information Criterion or BIC. Our penalty term has a simple and interpretable expression. We penalize our model based on the number of parameters and the number of observations. Although the name includes the word Bayesian, the BIC is not truly Bayesian. After all it assumes the prior has negligible contribution! However, due to its simplicity it is a common performance metric to penalize the number of parameters. Other such metrics exist, such as the Akaike Information Criterion (AIC), the Deviance Information Criterion (DIC), and the Widely Applicable Information Criterion (WAIC). The AIC is similar to the BIC, but penalizes the number of parameters less harshly than the BIC. The DIC and WAIC are more commonly used in full Bayesian analyses.
+
+For our purposes, because we are using the Laplace Approximation directly, we do not need to use the BIC. We will use the log marginal likelihood estimate provided by the Laplace Approximation. However, deriving the BIC provides a useful intuitive sense for what the penalty term is doing. As more parameters are added to the model, a negative contribution to the marginal likelihood is repeatedly applied.
