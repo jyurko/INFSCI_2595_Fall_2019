@@ -120,11 +120,21 @@ of 1 and probability of the event
 ![
 y\_n \\mid \\mathrm{size}=1, \\mu\_n \\sim \\mathrm{Binomial}\\left(y\_n
 \\mid \\mathrm{size=1}, \\mu\_n \\right) = \\mathrm{Bernoulli} \\left(
-y\_n \\mid \\mu\_n \\right) = \\left(\\mu\_n \\right)^{y\_n} \\left( 1 -
-\\mu\_n\\right)^{1-y\_n}
-](https://latex.codecogs.com/png.latex?%0Ay_n%20%5Cmid%20%5Cmathrm%7Bsize%7D%3D1%2C%20%5Cmu_n%20%5Csim%20%5Cmathrm%7BBinomial%7D%5Cleft%28y_n%20%5Cmid%20%5Cmathrm%7Bsize%3D1%7D%2C%20%5Cmu_n%20%5Cright%29%20%3D%20%5Cmathrm%7BBernoulli%7D%20%5Cleft%28%20y_n%20%5Cmid%20%5Cmu_n%20%5Cright%29%20%3D%20%5Cleft%28%5Cmu_n%20%5Cright%29%5E%7By_n%7D%20%5Cleft%28%201%20-%20%5Cmu_n%5Cright%29%5E%7B1-y_n%7D%0A
+y\_n \\mid \\mu\_n \\right)
+](https://latex.codecogs.com/png.latex?%0Ay_n%20%5Cmid%20%5Cmathrm%7Bsize%7D%3D1%2C%20%5Cmu_n%20%5Csim%20%5Cmathrm%7BBinomial%7D%5Cleft%28y_n%20%5Cmid%20%5Cmathrm%7Bsize%3D1%7D%2C%20%5Cmu_n%20%5Cright%29%20%3D%20%5Cmathrm%7BBernoulli%7D%20%5Cleft%28%20y_n%20%5Cmid%20%5Cmu_n%20%5Cright%29%0A
 "
-y_n \\mid \\mathrm{size}=1, \\mu_n \\sim \\mathrm{Binomial}\\left(y_n \\mid \\mathrm{size=1}, \\mu_n \\right) = \\mathrm{Bernoulli} \\left( y_n \\mid \\mu_n \\right) = \\left(\\mu_n \\right)^{y_n} \\left( 1 - \\mu_n\\right)^{1-y_n}
+y_n \\mid \\mathrm{size}=1, \\mu_n \\sim \\mathrm{Binomial}\\left(y_n \\mid \\mathrm{size=1}, \\mu_n \\right) = \\mathrm{Bernoulli} \\left( y_n \\mid \\mu_n \\right)
+")  
+
+Remember that the Bernoulli PMF is:
+
+  
+![ 
+\\mathrm{Bernoulli} \\left( y\_n \\mid \\mu\_n \\right) = \\left(\\mu\_n
+\\right)^{y\_n} \\left( 1 - \\mu\_n\\right)^{1-y\_n}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cmathrm%7BBernoulli%7D%20%5Cleft%28%20y_n%20%5Cmid%20%5Cmu_n%20%5Cright%29%20%3D%20%5Cleft%28%5Cmu_n%20%5Cright%29%5E%7By_n%7D%20%5Cleft%28%201%20-%20%5Cmu_n%5Cright%29%5E%7B1-y_n%7D%0A
+" 
+\\mathrm{Bernoulli} \\left( y_n \\mid \\mu_n \\right) = \\left(\\mu_n \\right)^{y_n} \\left( 1 - \\mu_n\\right)^{1-y_n}
 ")  
 
 ## What do we model?
