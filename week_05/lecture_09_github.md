@@ -1767,13 +1767,20 @@ and ![\\beta\_1](https://latex.codecogs.com/png.latex?%5Cbeta_1
 ![ 
 \\frac{\\partial L\_n}{\\partial \\beta\_0} = \\frac{\\partial
 L\_n}{\\partial \\mu\_n} \\frac{\\partial \\mu\_n}{\\partial \\eta\_n}
-\\frac{\\partial \\eta\_n}{\\partial \\beta\_0} \\\\ \\frac{\\partial
-L\_n}{\\partial \\beta\_1} = \\frac{\\partial L\_n}{\\partial \\mu\_n}
-\\frac{\\partial \\mu\_n}{\\partial \\eta\_n} \\frac{\\partial
-\\eta\_n}{\\partial \\beta\_1}
-](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cmu_n%7D%20%5Cfrac%7B%5Cpartial%20%5Cmu_n%7D%7B%5Cpartial%20%5Ceta_n%7D%20%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%5C%5C%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cmu_n%7D%20%5Cfrac%7B%5Cpartial%20%5Cmu_n%7D%7B%5Cpartial%20%5Ceta_n%7D%20%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%0A
+\\frac{\\partial \\eta\_n}{\\partial \\beta\_0}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cmu_n%7D%20%5Cfrac%7B%5Cpartial%20%5Cmu_n%7D%7B%5Cpartial%20%5Ceta_n%7D%20%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%0A
 " 
-\\frac{\\partial L_n}{\\partial \\beta_0} = \\frac{\\partial L_n}{\\partial \\mu_n} \\frac{\\partial \\mu_n}{\\partial \\eta_n} \\frac{\\partial \\eta_n}{\\partial \\beta_0} \\\\ \\frac{\\partial L_n}{\\partial \\beta_1} = \\frac{\\partial L_n}{\\partial \\mu_n} \\frac{\\partial \\mu_n}{\\partial \\eta_n} \\frac{\\partial \\eta_n}{\\partial \\beta_1}
+\\frac{\\partial L_n}{\\partial \\beta_0} = \\frac{\\partial L_n}{\\partial \\mu_n} \\frac{\\partial \\mu_n}{\\partial \\eta_n} \\frac{\\partial \\eta_n}{\\partial \\beta_0}
+")  
+
+  
+![ 
+\\frac{\\partial L\_n}{\\partial \\beta\_1} = \\frac{\\partial
+L\_n}{\\partial \\mu\_n} \\frac{\\partial \\mu\_n}{\\partial \\eta\_n}
+\\frac{\\partial \\eta\_n}{\\partial \\beta\_1}
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cmu_n%7D%20%5Cfrac%7B%5Cpartial%20%5Cmu_n%7D%7B%5Cpartial%20%5Ceta_n%7D%20%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%0A
+" 
+\\frac{\\partial L_n}{\\partial \\beta_1} = \\frac{\\partial L_n}{\\partial \\mu_n} \\frac{\\partial \\mu_n}{\\partial \\eta_n} \\frac{\\partial \\eta_n}{\\partial \\beta_1}
 ")  
 
 Inspecting the two derivatives above reveals the only difference between
@@ -1811,31 +1818,62 @@ parameter:
 
   
 ![ 
-\\frac{\\partial \\eta\_n}{\\partial \\beta\_0} = 1 \\\\
-\\frac{\\partial \\eta\_n}{\\partial \\beta\_1} = x\_n
-](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%201%20%5C%5C%20%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20x_n%0A
+\\frac{\\partial \\eta\_n}{\\partial \\beta\_0} = 1
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%201%0A
 " 
-\\frac{\\partial \\eta_n}{\\partial \\beta_0} = 1 \\\\ \\frac{\\partial \\eta_n}{\\partial \\beta_1} = x_n
+\\frac{\\partial \\eta_n}{\\partial \\beta_0} = 1
 ")  
 
-Combining all of the terms within the chain rule therefore gives the
-partial derivatives of the ![n](https://latex.codecogs.com/png.latex?n
-"n")-th likelihood to be:
+  
+![ 
+\\frac{\\partial \\eta\_n}{\\partial \\beta\_1} = x\_n
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20%5Ceta_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20x_n%0A
+" 
+\\frac{\\partial \\eta_n}{\\partial \\beta_1} = x_n
+")  
+
+Combine all of the terms within the chain rule:
 
   
 ![ 
 \\frac{\\partial L\_n}{\\partial \\beta\_0} = \\left(
 \\frac{y\_n}{\\mu\_n}-\\frac{1-y\_n}{1-\\mu\_n} \\right) \\left( \\mu\_n
-\\left(1 - \\mu\_n \\right) \\right) \\cdot 1 = y\_n \\left(1 -
-\\mu\_n\\right) - \\mu\_n \\left(1 - y\_n\\right) = y\_n - \\mu\_n \\\\
+\\left(1 - \\mu\_n \\right) \\right) \\left(1\\right) = y\_n \\left(1 -
+\\mu\_n\\right) - \\mu\_n \\left(1 - y\_n\\right)
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%20%5Cleft%28%20%5Cfrac%7By_n%7D%7B%5Cmu_n%7D-%5Cfrac%7B1-y_n%7D%7B1-%5Cmu_n%7D%20%5Cright%29%20%5Cleft%28%20%5Cmu_n%20%5Cleft%281%20-%20%5Cmu_n%20%5Cright%29%20%5Cright%29%20%5Cleft%281%5Cright%29%20%3D%20y_n%20%5Cleft%281%20-%20%5Cmu_n%5Cright%29%20-%20%5Cmu_n%20%5Cleft%281%20-%20y_n%5Cright%29%0A
+" 
+\\frac{\\partial L_n}{\\partial \\beta_0} = \\left( \\frac{y_n}{\\mu_n}-\\frac{1-y_n}{1-\\mu_n} \\right) \\left( \\mu_n \\left(1 - \\mu_n \\right) \\right) \\left(1\\right) = y_n \\left(1 - \\mu_n\\right) - \\mu_n \\left(1 - y_n\\right)
+")  
+
+  
+![ 
 \\frac{\\partial L\_n}{\\partial \\beta\_1} = \\left(
 \\frac{y\_n}{\\mu\_n}-\\frac{1-y\_n}{1-\\mu\_n} \\right) \\left( \\mu\_n
-\\left(1 - \\mu\_n \\right) \\right) \\cdot x\_n = \\left(y\_n \\left(1
-- \\mu\_n\\right) - \\mu\_n \\left(1 - y\_n\\right) \\right) x\_n =
-\\left( y\_n - \\mu\_n \\right) x\_n
-](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%20%5Cleft%28%20%5Cfrac%7By_n%7D%7B%5Cmu_n%7D-%5Cfrac%7B1-y_n%7D%7B1-%5Cmu_n%7D%20%5Cright%29%20%5Cleft%28%20%5Cmu_n%20%5Cleft%281%20-%20%5Cmu_n%20%5Cright%29%20%5Cright%29%20%5Ccdot%201%20%3D%20y_n%20%5Cleft%281%20-%20%5Cmu_n%5Cright%29%20-%20%5Cmu_n%20%5Cleft%281%20-%20y_n%5Cright%29%20%3D%20y_n%20-%20%5Cmu_n%20%5C%5C%20%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20%5Cleft%28%20%5Cfrac%7By_n%7D%7B%5Cmu_n%7D-%5Cfrac%7B1-y_n%7D%7B1-%5Cmu_n%7D%20%5Cright%29%20%5Cleft%28%20%5Cmu_n%20%5Cleft%281%20-%20%5Cmu_n%20%5Cright%29%20%5Cright%29%20%5Ccdot%20x_n%20%3D%20%5Cleft%28y_n%20%5Cleft%281%20-%20%5Cmu_n%5Cright%29%20-%20%5Cmu_n%20%5Cleft%281%20-%20y_n%5Cright%29%20%5Cright%29%20x_n%20%3D%20%5Cleft%28%20y_n%20-%20%5Cmu_n%20%5Cright%29%20x_n%0A
+\\left(1 - \\mu\_n \\right) \\right) \\left(x\_n \\right) = \\left(y\_n
+\\left(1 - \\mu\_n\\right) - \\mu\_n \\left(1 - y\_n\\right) \\right)
+x\_n
+](https://latex.codecogs.com/png.latex?%20%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20%5Cleft%28%20%5Cfrac%7By_n%7D%7B%5Cmu_n%7D-%5Cfrac%7B1-y_n%7D%7B1-%5Cmu_n%7D%20%5Cright%29%20%5Cleft%28%20%5Cmu_n%20%5Cleft%281%20-%20%5Cmu_n%20%5Cright%29%20%5Cright%29%20%5Cleft%28x_n%20%5Cright%29%20%3D%20%5Cleft%28y_n%20%5Cleft%281%20-%20%5Cmu_n%5Cright%29%20-%20%5Cmu_n%20%5Cleft%281%20-%20y_n%5Cright%29%20%5Cright%29%20x_n%0A
 " 
-\\frac{\\partial L_n}{\\partial \\beta_0} = \\left( \\frac{y_n}{\\mu_n}-\\frac{1-y_n}{1-\\mu_n} \\right) \\left( \\mu_n \\left(1 - \\mu_n \\right) \\right) \\cdot 1 = y_n \\left(1 - \\mu_n\\right) - \\mu_n \\left(1 - y_n\\right) = y_n - \\mu_n \\\\ \\frac{\\partial L_n}{\\partial \\beta_1} = \\left( \\frac{y_n}{\\mu_n}-\\frac{1-y_n}{1-\\mu_n} \\right) \\left( \\mu_n \\left(1 - \\mu_n \\right) \\right) \\cdot x_n = \\left(y_n \\left(1 - \\mu_n\\right) - \\mu_n \\left(1 - y_n\\right) \\right) x_n = \\left( y_n - \\mu_n \\right) x_n
+\\frac{\\partial L_n}{\\partial \\beta_1} = \\left( \\frac{y_n}{\\mu_n}-\\frac{1-y_n}{1-\\mu_n} \\right) \\left( \\mu_n \\left(1 - \\mu_n \\right) \\right) \\left(x_n \\right) = \\left(y_n \\left(1 - \\mu_n\\right) - \\mu_n \\left(1 - y_n\\right) \\right) x_n
+")  
+
+And then simplify to give:
+
+  
+![
+\\frac{\\partial L\_n}{\\partial \\beta\_0} = y\_n - \\mu\_n
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_0%7D%20%3D%20y_n%20-%20%5Cmu_n%0A
+"
+\\frac{\\partial L_n}{\\partial \\beta_0} = y_n - \\mu_n
+")  
+
+  
+![
+\\frac{\\partial L\_n}{\\partial \\beta\_1} = \\left( y\_n - \\mu\_n
+\\right) x\_n
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%20L_n%7D%7B%5Cpartial%20%5Cbeta_1%7D%20%3D%20%5Cleft%28%20y_n%20-%20%5Cmu_n%20%5Cright%29%20x_n%0A
+"
+\\frac{\\partial L_n}{\\partial \\beta_1} = \\left( y_n - \\mu_n \\right) x_n
 ")  
 
 We can make use of a trick we applied to the linear model formulation to
