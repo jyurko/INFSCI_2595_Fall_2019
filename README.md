@@ -26,6 +26,11 @@ In addition, students will be introduced to feature selection, unsupervised lear
 ### Week 05
 * Regression performance metrics: RMSE, MAE, R-squared.
 * Bayesian model selection, complexity, and information criteria.
-* Introduction to logistic regression.
+* Introduction to logistic regression.  
+
+### Week 06
+* Bayesian logistic regression.
+* Multiple inputs and interactions.
+* Classification performance metrics.  
 
 ![PittSCIlogo](https://pbs.twimg.com/profile_images/881872023546408960/coamC-xz_400x400.jpg)
