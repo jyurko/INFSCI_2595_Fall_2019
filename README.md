@@ -31,6 +31,10 @@ In addition, students will be introduced to feature selection, unsupervised lear
 ### Week 06
 * Bayesian logistic regression.
 * Multiple inputs and interactions.
-* Classification performance metrics.  
+* Confusion matrix.  
+
+### Week 07
+* Confusion matrix continued.  
+* ROC curve, calibration curve.
 
 ![PittSCIlogo](https://pbs.twimg.com/profile_images/881872023546408960/coamC-xz_400x400.jpg)
