@@ -1847,7 +1847,7 @@ model_regularize_perform_study %>%
                                               J))) +
   facet_wrap( ~ J, labeller = "label_both", scales = "free_y") +
   labs(x = expression("log["*tau[beta]*"]"),
-       y = "Training set Deviance") +
+       y = "Hold-out set Deviance") +
   theme_bw() +
   theme(legend.position = "top")
 ```
@@ -1886,6 +1886,116 @@ model_regularize_perform_study %>%
 ```
 
 ![](lecture_15_github_files/figure-gfm/viz_deviance_study_result_2_tau_beta-1.png)<!-- -->
+
+Let’s now visualize the performance metrics with respect to both the log
+of the prior standard deviation and the polynomial order,
+![J](https://latex.codecogs.com/png.latex?J "J"). We will only consider
+the hold-out set based metrics. The figure below plots all of the
+ribbons of the posterior RMSE. The models are denoted by the first 5
+models, and then all models greater than the 4th order model
+
+``` r
+model_regularize_perform_study %>% 
+  filter(metric_name == "RMSE") %>% 
+  filter(type == "hold-out set") %>% 
+  ggplot(mapping = aes(x = log(tau_beta))) +
+  geom_ribbon(mapping = aes(ymin = metric_q25,
+                            ymax = metric_q75,
+                            group = interaction(metric_name,
+                                                type,
+                                                J),
+                            fill = ifelse(J > 4,
+                                         "J > 4",
+                                         as.character(J))),
+              alpha = 0.33) +
+  geom_line(mapping = aes(y = metric_avg,
+                          group = interaction(metric_name,
+                                              type,
+                                              J),
+                          color = ifelse(J > 4,
+                                         "J > 4",
+                                         as.character(J)))) +
+  coord_cartesian(ylim = c(2, 7)) +
+  scale_color_viridis_d("J", option = "magma") +
+  scale_fill_viridis_d("J", option = "magma") +
+  labs(x = expression("log["*tau[beta]*"]"),
+       y = "Hold-out set RMSE") +
+  theme(legend.position = "top",
+        panel.background = element_rect(fill = "grey70"),
+        panel.grid.major = element_line(linetype = "dotted"),
+        panel.grid.minor = element_blank(),
+        legend.key = element_rect(fill = "grey70")) +
+  guides(color = guide_legend(nrow = 1),
+         fill = guide_legend(nrow = 1))
+```
+
+![](lecture_15_github_files/figure-gfm/viz_rmse_study_results_two_prior_sd_all_models-1.png)<!-- -->
+
+The figure below zooms in to focus on the
+![\\log\\left\[\\tau\_{\\beta}\\right\]](https://latex.codecogs.com/png.latex?%5Clog%5Cleft%5B%5Ctau_%7B%5Cbeta%7D%5Cright%5D
+"\\log\\left[\\tau_{\\beta}\\right]") values between -2 and +2. The
+y-axis is also zoomed in to help identify the minimum RMSE a little
+easier.
+
+``` r
+model_regularize_perform_study %>% 
+  filter(metric_name == "RMSE") %>% 
+  filter(type == "hold-out set") %>% 
+  ggplot(mapping = aes(x = log(tau_beta))) +
+  geom_ribbon(mapping = aes(ymin = metric_q25,
+                            ymax = metric_q75,
+                            group = interaction(metric_name,
+                                                type,
+                                                J),
+                            fill = ifelse(J > 4,
+                                         "J > 4",
+                                         as.character(J))),
+              alpha = 0.33) +
+  geom_line(mapping = aes(y = metric_avg,
+                          group = interaction(metric_name,
+                                              type,
+                                              J),
+                          color = ifelse(J > 4,
+                                         "J > 4",
+                                         as.character(J)))) +
+  coord_cartesian(xlim = c(-2, 2), ylim = c(2.5, 4.5)) +
+  scale_color_viridis_d("J", option = "magma") +
+  scale_fill_viridis_d("J", option = "magma") +
+  labs(x = expression("log["*tau[beta]*"]"),
+       y = "Hold-out set RMSE") +
+  theme(legend.position = "top",
+        panel.background = element_rect(fill = "grey70"),
+        panel.grid.major = element_line(linetype = "dotted"),
+        panel.grid.minor = element_blank(),
+        legend.key = element_rect(fill = "grey70")) +
+  guides(color = guide_legend(nrow = 1),
+         fill = guide_legend(nrow = 1))
+```
+
+![](lecture_15_github_files/figure-gfm/viz_rmse_study_results_two_prior_sd_all_models_zoom-1.png)<!-- -->
+
+It’s probably still a little challenging to see which model has the
+lowest hold-out set RMSE. Let’s focus on the posterior mean RMSE, and
+visualize it has on as a surface. The `x` aesthetic below is the log of
+the prior standard deviation and the `y` aesthetic is the polynomial
+order. The `fill` aesthetic is set equal to the posterior mean RMSE. The
+max limit on the color is set to 7, therefore any RMSE greater than 7 is
+plotted as a grey area in the figure below.
+
+``` r
+model_regularize_perform_study %>% 
+  filter(metric_name == "RMSE") %>% 
+  ggplot(mapping = aes(x = log(tau_beta),
+                       y = J)) +
+  geom_raster(mapping = aes(fill = metric_avg)) +
+  facet_wrap(~metric_name) +
+  scale_fill_viridis_c("Hold-out\nMean",
+                       limits = c(2, 7)) +
+  scale_y_continuous(breaks = poly_try) +
+  theme_bw()
+```
+
+![](lecture_15_github_files/figure-gfm/show_rmse_holdout_surface-1.png)<!-- -->
 
 Let’s step into the math for a bit to see where the behavior comes from.
 We discussed the posterior on the
